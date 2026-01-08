@@ -1,106 +1,82 @@
 <template>
-  <ion-page>
-    <ion-header :translucent="true">
-      <ion-toolbar>
-        <ion-title>Johannisches Gesangbuch</ion-title>
-      </ion-toolbar>
-    </ion-header>
+    <ion-page>
+        <ion-content :fullscreen="true">
+            <!-- Logout button in top right -->
+            <ion-button
+                v-if="isLoggedIn"
+                fill="clear"
+                class="absolute top-4 right-4 z-10"
+                style="--color: var(--ion-color-medium)"
+                @click="handleLogout"
+            >
+                <ion-icon slot="icon-only" :icon="logOutOutline"></ion-icon>
+            </ion-button>
 
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Gesangbuch</ion-title>
-        </ion-toolbar>
-      </ion-header>
+            <div class="text-center px-6 py-8 min-h-full flex flex-col justify-center">
+                <ion-img src="/logo.png" alt="Logo" class="w-52 h-52 mb-8 mx-auto block" />
+                <h1 class="text-3xl font-semibold mb-2">Willkommen</h1>
+                <p v-if="user" class="text-base text-[color:var(--ion-color-medium)] mb-8">
+                    {{ user.firstName || user.email }}
+                </p>
+                <p v-else class="text-base text-[color:var(--ion-color-medium)] mb-8">
+                    Johannisches Gesangbuch
+                </p>
 
-      <div id="container">
-        <ion-img src="/logo.png" alt="Logo" id="logo"></ion-img>
-        <h1>Willkommen</h1>
-        <p>Johannisches Gesangbuch</p>
+                <!-- Show loading spinner while checking auth state -->
+                <div v-if="isLoading" class="flex flex-col items-center gap-4">
+                    <ion-spinner name="crescent"></ion-spinner>
+                </div>
 
-        <ion-button expand="block" @click="navigateToSongs">
-          <ion-icon slot="start" :icon="listOutline"></ion-icon>
-          Lieder anzeigen
-        </ion-button>
+                <!-- Main navigation buttons -->
+                <div v-else class="space-y-3">
+                    <ion-button expand="block" @click="navigateToSongs">
+                        <ion-icon slot="start" :icon="listOutline"></ion-icon>
+                        Lieder anzeigen
+                    </ion-button>
 
-        <ion-button expand="block" fill="outline" @click="navigateToDownload">
-          <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
-          Daten synchronisieren
-        </ion-button>
-      </div>
-    </ion-content>
-  </ion-page>
+                    <ion-button expand="block" fill="outline" @click="navigateToDownload">
+                        <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
+                        Daten synchronisieren
+                    </ion-button>
+                </div>
+            </div>
+        </ion-content>
+    </ion-page>
 </template>
 
 <script setup lang="ts">
-import {
-  IonContent,
-  IonHeader,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-  IonButton,
-  IonIcon,
-  IonImg,
-} from "@ionic/vue";
-import {
-  musicalNotesOutline,
-  listOutline,
-  downloadOutline,
-} from "ionicons/icons";
-import { useRouter } from "vue-router";
+import { IonButton, IonContent, IonIcon, IonImg, IonPage, IonSpinner } from '@ionic/vue';
+import { downloadOutline, listOutline, logOutOutline } from 'ionicons/icons';
+import { useRouter } from 'vue-router';
+
+import { useSongsStore } from '@/stores/songs';
+
+import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
+const { user, logout, isLoading, isLoggedIn } = useAuth();
+const songsStore = useSongsStore();
 
 function navigateToSongs() {
-  router.push("/songs");
+    // Check if songs are downloaded
+    if (songsStore.songs.length === 0) {
+        // Suggest download first
+        router.push('/download');
+    } else {
+        router.push('/songs');
+    }
 }
 
 function navigateToDownload() {
-  router.push("/download");
+    router.push('/download');
+}
+
+async function handleLogout() {
+    await logout();
+    router.push('/login');
 }
 </script>
 
 <style scoped>
-#container {
-  text-align: center;
-
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-#logo {
-  width: 250px;
-  height: 250px;
-  margin-bottom: 1rem;
-  /* center the logo */
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
-
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-
-  color: #8c8c8c;
-
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
-}
-
-ion-button {
-  margin-top: 0.5rem;
-}
+/* HomePage specific styles - layout handled by Tailwind */
 </style>
