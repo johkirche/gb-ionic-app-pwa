@@ -9,8 +9,5 @@ import { IonApp, IonRouterOutlet } from '@ionic/vue';
 </script>
 
 <style>
-.mobile-container {
-    max-width: 600px;
-    margin: 0 auto;
-}
+/* Mobile container styles are defined in theme/variables.css */
 </style>

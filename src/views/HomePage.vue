@@ -5,30 +5,28 @@
             <ion-button
                 v-if="isLoggedIn"
                 fill="clear"
-                class="absolute top-4 right-4 z-10"
+                class="floating-button floating-button--top-right"
                 style="--color: var(--ion-color-medium)"
                 @click="handleLogout"
             >
                 <ion-icon slot="icon-only" :icon="logOutOutline"></ion-icon>
             </ion-button>
 
-            <div class="text-center px-6 py-8 min-h-full flex flex-col justify-center">
-                <ion-img src="/logo.png" alt="Logo" class="w-52 h-52 mb-8 mx-auto block" />
-                <h1 class="text-3xl font-semibold mb-2">Willkommen</h1>
-                <p v-if="user" class="text-base text-[color:var(--ion-color-medium)] mb-8">
+            <div class="centered-container">
+                <ion-img src="/logo.png" alt="Logo" class="logo logo--md" />
+                <h1 class="heading-lg">Willkommen</h1>
+                <p v-if="user" class="text-description">
                     {{ user.firstName || user.email }}
                 </p>
-                <p v-else class="text-base text-[color:var(--ion-color-medium)] mb-8">
-                    Johannisches Gesangbuch
-                </p>
+                <p v-else class="text-description">Johannisches Gesangbuch</p>
 
                 <!-- Show loading spinner while checking auth state -->
-                <div v-if="isLoading" class="flex flex-col items-center gap-4">
+                <div v-if="isLoading" class="state-container--inline">
                     <ion-spinner name="crescent"></ion-spinner>
                 </div>
 
                 <!-- Main navigation buttons -->
-                <div v-else class="space-y-3">
+                <div v-else class="nav-buttons">
                     <ion-button expand="block" @click="navigateToSongs">
                         <ion-icon slot="start" :icon="listOutline"></ion-icon>
                         Lieder anzeigen
@@ -78,5 +76,11 @@ async function handleLogout() {
 </script>
 
 <style scoped>
-/* HomePage specific styles - layout handled by Tailwind */
+.nav-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    width: 100%;
+    max-width: 300px;
+}
 </style>

@@ -1,41 +1,37 @@
 <template>
     <ion-page>
         <ion-content :fullscreen="true">
-            <div class="max-w-md mx-auto px-6 py-16 min-h-screen flex flex-col justify-center">
-                <div class="text-center mb-8">
-                    <ion-img src="/logo.png" alt="Logo" class="w-52 h-52 mx-auto block" />
-                    <h1 class="text-4xl font-semibold mb-2">Gesangbuch</h1>
-                    <p class="text-[color:var(--ion-color-medium)] text-sm">
-                        Melden Sie sich an, um fortzufahren
-                    </p>
+            <div class="auth-container auth-container--centered">
+                <div class="section-header">
+                    <ion-img src="/logo.png" alt="Logo" class="logo logo--md" />
+                    <h1 class="heading-xl">Gesangbuch</h1>
+                    <p class="text-muted">Melden Sie sich an, um fortzufahren</p>
                 </div>
 
                 <form @submit.prevent="handleLogin">
-                    <ion-list>
-                        <ion-item>
-                            <ion-input
-                                v-model="email"
-                                type="email"
-                                label="E-Mail"
-                                label-placement="floating"
-                                required
-                                autocomplete="email"
-                                :disabled="isLoading"
-                            ></ion-input>
-                        </ion-item>
+                    <div class="form-stack">
+                        <ion-input
+                            v-model="email"
+                            type="email"
+                            label="E-Mail"
+                            label-placement="floating"
+                            required
+                            autocomplete="email"
+                            fill="outline"
+                            :disabled="isLoading"
+                        ></ion-input>
 
-                        <ion-item>
-                            <ion-input
-                                v-model="password"
-                                type="password"
-                                label="Passwort"
-                                label-placement="floating"
-                                required
-                                autocomplete="current-password"
-                                :disabled="isLoading"
-                            ></ion-input>
-                        </ion-item>
-                    </ion-list>
+                        <ion-input
+                            v-model="password"
+                            type="password"
+                            label="Passwort"
+                            label-placement="floating"
+                            required
+                            fill="outline"
+                            autocomplete="current-password"
+                            :disabled="isLoading"
+                        ></ion-input>
+                    </div>
 
                     <ion-button
                         expand="block"
@@ -53,19 +49,13 @@
                         router-link="/password-reset"
                         :disabled="isLoading"
                         size="small"
-                        class="mt-2"
+                        class="ion-margin-top"
                     >
                         Passwort vergessen?
                     </ion-button>
 
-                    <div class="flex items-center text-center my-6">
-                        <div
-                            class="flex-1 border-b border-[color:var(--ion-color-light-shade)]"
-                        ></div>
-                        <span class="px-4 text-[color:var(--ion-color-medium)] text-sm">oder</span>
-                        <div
-                            class="flex-1 border-b border-[color:var(--ion-color-light-shade)]"
-                        ></div>
+                    <div class="divider-text">
+                        <span class="divider-text__text">oder</span>
                     </div>
 
                     <ion-button
@@ -91,7 +81,7 @@
                 </form>
 
                 <ion-text v-if="error" color="danger" class="ion-margin-top">
-                    <p class="text-center text-sm">{{ error }}</p>
+                    <p class="error-message">{{ error }}</p>
                 </ion-text>
             </div>
         </ion-content>
@@ -101,16 +91,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import {
-    IonButton,
-    IonContent,
-    IonInput,
-    IonItem,
-    IonList,
-    IonPage,
-    IonSpinner,
-    IonText,
-} from '@ionic/vue';
+import { IonButton, IonContent, IonImg, IonInput, IonPage, IonSpinner, IonText } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 
 import { useAuth } from '@/composables/useAuth';
@@ -141,5 +122,5 @@ async function handleSkip() {
 </script>
 
 <style scoped>
-/* LoginPage specific styles - layout handled by Tailwind */
+/* LoginPage - no component-specific styles needed */
 </style>

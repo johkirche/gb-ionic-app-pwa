@@ -57,9 +57,15 @@ const SONGS_QUERY = `
     { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name } } } }
 `;
 
-// Get current token from user store
+// Get current token from user store or env variable for debug mode
 function getCurrentToken(): string | null {
     const userStore = useUserStore();
+
+    // If skipAuth is enabled (debug mode), use the environment variable token
+    if (userStore.skipAuth) {
+        return import.meta.env.VITE_AUTH_TOKEN || null;
+    }
+
     return userStore.authData?.accessToken || null;
 }
 

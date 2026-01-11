@@ -4,52 +4,40 @@
             <!-- Back button integrated into content -->
             <ion-button
                 fill="clear"
-                class="back-button absolute top-4 left-2 z-10"
+                class="back-button floating-button floating-button--top-left"
                 @click="$router.back()"
             >
                 <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
             </ion-button>
 
-            <div class="max-w-md mx-auto px-6 pt-16 pb-8 min-h-screen">
-                <div class="text-center mb-8">
-                    <ion-icon
-                        :icon="keyOutline"
-                        class="text-6xl text-[color:var(--ion-color-primary)] mb-4"
-                    ></ion-icon>
-                    <h1 class="text-3xl font-semibold mb-2">Passwort zurücksetzen</h1>
-                    <p
-                        v-if="!token && !emailSent"
-                        class="text-[color:var(--ion-color-medium)] text-sm leading-relaxed"
-                    >
+            <div class="auth-container">
+                <div class="section-header">
+                    <ion-icon :icon="keyOutline" class="icon-hero"></ion-icon>
+                    <h1 class="heading-lg">Passwort zurücksetzen</h1>
+                    <p v-if="!token && !emailSent" class="text-muted text-muted--relaxed">
                         Geben Sie Ihre E-Mail-Adresse ein, um einen Link zum Zurücksetzen Ihres
                         Passworts zu erhalten
                     </p>
-                    <p
-                        v-else-if="emailSent"
-                        class="text-[color:var(--ion-color-medium)] text-sm leading-relaxed"
-                    >
+                    <p v-else-if="emailSent" class="text-muted text-muted--relaxed">
                         Eine E-Mail mit einem Link zum Zurücksetzen wurde gesendet
                     </p>
-                    <p v-else class="text-[color:var(--ion-color-medium)] text-sm leading-relaxed">
+                    <p v-else class="text-muted text-muted--relaxed">
                         Geben Sie Ihr neues Passwort ein
                     </p>
                 </div>
 
                 <!-- Email request form (no token) -->
                 <form v-if="!token && !emailSent" @submit.prevent="handleRequestReset">
-                    <ion-list>
-                        <ion-item>
-                            <ion-input
-                                v-model="email"
-                                type="email"
-                                label="E-Mail"
-                                label-placement="floating"
-                                required
-                                autocomplete="email"
-                                :disabled="isLoading"
-                            ></ion-input>
-                        </ion-item>
-                    </ion-list>
+                    <ion-input
+                        v-model="email"
+                        type="email"
+                        label="E-Mail"
+                        label-placement="floating"
+                        required
+                        autocomplete="email"
+                        fill="outline"
+                        :disabled="isLoading"
+                    ></ion-input>
 
                     <ion-button
                         expand="block"
@@ -69,10 +57,13 @@
                 <!-- Success message after email sent -->
                 <div v-else-if="emailSent && !token">
                     <ion-text color="success">
-                        <div class="result-box success">
-                            <ion-icon :icon="checkmarkCircleOutline" class="result-icon"></ion-icon>
-                            <h2>E-Mail gesendet!</h2>
-                            <p>
+                        <div class="result-box result-box--success">
+                            <ion-icon
+                                :icon="checkmarkCircleOutline"
+                                class="result-box__icon"
+                            ></ion-icon>
+                            <h2 class="result-box__title">E-Mail gesendet!</h2>
+                            <p class="result-box__message">
                                 Wir haben Ihnen eine E-Mail mit einem Link zum Zurücksetzen Ihres
                                 Passworts gesendet. Bitte überprüfen Sie Ihren Posteingang.
                             </p>
@@ -86,31 +77,29 @@
 
                 <!-- Password reset form (with token) -->
                 <form v-else @submit.prevent="handleResetPassword">
-                    <ion-list>
-                        <ion-item>
-                            <ion-input
-                                v-model="newPassword"
-                                type="password"
-                                label="Neues Passwort"
-                                label-placement="floating"
-                                required
-                                autocomplete="new-password"
-                                :disabled="isLoading"
-                            ></ion-input>
-                        </ion-item>
+                    <div class="form-stack">
+                        <ion-input
+                            v-model="newPassword"
+                            type="password"
+                            label="Neues Passwort"
+                            label-placement="floating"
+                            required
+                            autocomplete="new-password"
+                            fill="outline"
+                            :disabled="isLoading"
+                        ></ion-input>
 
-                        <ion-item>
-                            <ion-input
-                                v-model="confirmPassword"
-                                type="password"
-                                label="Passwort bestätigen"
-                                label-placement="floating"
-                                required
-                                autocomplete="new-password"
-                                :disabled="isLoading"
-                            ></ion-input>
-                        </ion-item>
-                    </ion-list>
+                        <ion-input
+                            v-model="confirmPassword"
+                            type="password"
+                            label="Passwort bestätigen"
+                            label-placement="floating"
+                            required
+                            autocomplete="new-password"
+                            fill="outline"
+                            :disabled="isLoading"
+                        ></ion-input>
+                    </div>
 
                     <ion-text v-if="passwordError" color="danger" class="ion-margin-top">
                         <p class="error-message">{{ passwordError }}</p>
@@ -131,10 +120,15 @@
                     </ion-text>
 
                     <ion-text v-if="resetSuccess" color="success" class="ion-margin-top">
-                        <div class="result-box success">
-                            <ion-icon :icon="checkmarkCircleOutline" class="result-icon"></ion-icon>
-                            <h2>Passwort zurückgesetzt!</h2>
-                            <p>Ihr Passwort wurde erfolgreich geändert.</p>
+                        <div class="result-box result-box--success">
+                            <ion-icon
+                                :icon="checkmarkCircleOutline"
+                                class="result-box__icon"
+                            ></ion-icon>
+                            <h2 class="result-box__title">Passwort zurückgesetzt!</h2>
+                            <p class="result-box__message">
+                                Ihr Passwort wurde erfolgreich geändert.
+                            </p>
                         </div>
                     </ion-text>
 
@@ -159,17 +153,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import {
-    IonButton,
-    IonContent,
-    IonIcon,
-    IonInput,
-    IonItem,
-    IonList,
-    IonPage,
-    IonSpinner,
-    IonText,
-} from '@ionic/vue';
+import { IonButton, IonContent, IonIcon, IonInput, IonPage, IonSpinner, IonText } from '@ionic/vue';
 import { arrowBackOutline, checkmarkCircleOutline, keyOutline } from 'ionicons/icons';
 import { useRoute } from 'vue-router';
 
@@ -236,30 +220,8 @@ async function handleResetPassword() {
 </script>
 
 <style scoped>
-/* PasswordResetPage specific styles - layout handled by Tailwind */
-.result-box {
+/* PasswordResetPage - uses global result-box classes from variables.css */
+.back-link {
     text-align: center;
-    padding: 2rem;
-    border-radius: 12px;
-    margin-top: 1rem;
-}
-
-.result-box.success {
-    background: var(--ion-color-success-tint);
-}
-
-.result-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.result-box h2 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.result-box p {
-    font-size: 0.875rem;
-    line-height: 1.5;
 }
 </style>

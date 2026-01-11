@@ -3,35 +3,35 @@
         <ion-content :fullscreen="true">
             <!-- Back button and title integrated into content -->
             <div class="page-header">
-                <ion-button fill="clear" class="back-button m-0" @click="$router.back()">
+                <ion-button fill="clear" class="back-button" @click="$router.back()">
                     <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
                 </ion-button>
                 <h1 class="page-title">Synchronisieren</h1>
             </div>
 
-            <div class="p-4 max-w-3xl mx-auto">
+            <div class="content-container card-stack">
                 <!-- Sync Status Card -->
                 <ion-card>
                     <ion-card-header>
                         <ion-card-title>Synchronisierungsstatus</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list>
-                            <ion-item>
+                        <ion-list class="transparent">
+                            <ion-item class="transparent">
                                 <ion-icon :icon="musicalNotesOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Lieder</h3>
                                     <p>{{ songsCount }} Lieder gespeichert</p>
                                 </ion-label>
                             </ion-item>
-                            <ion-item>
+                            <ion-item class="transparent">
                                 <ion-icon :icon="imageOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Notendateien (PNG)</h3>
                                     <p>{{ filesCount }} Dateien gespeichert</p>
                                 </ion-label>
                             </ion-item>
-                            <ion-item v-if="lastSyncTime">
+                            <ion-item v-if="lastSyncTime" class="transparent">
                                 <ion-icon :icon="timeOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Letzte Synchronisierung</h3>
@@ -48,7 +48,7 @@
                         <ion-card-title>Synchronisierung</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <p class="mb-4 text-[color:var(--ion-color-medium)] leading-relaxed">
+                        <p class="sync-description">
                             Lädt alle Lieder und Notendateien vom Server herunter und speichert sie
                             lokal für die Offline-Nutzung.
                         </p>
@@ -72,19 +72,24 @@
                         <ion-card-title>Wird synchronisiert...</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <div class="flex flex-col items-center gap-4 py-4">
+                        <div class="state-container--inline">
                             <ion-spinner name="crescent"></ion-spinner>
-                            <p v-if="syncProgress.phase === 'songs'" class="m-0 text-center">
+                            <p
+                                v-if="syncProgress.phase === 'songs'"
+                                class="ion-no-margin ion-text-center"
+                            >
                                 Lieder werden geladen...
                             </p>
                             <p
                                 v-else-if="syncProgress.phase === 'files' && syncProgress.total > 0"
-                                class="m-0 text-center"
+                                class="ion-no-margin ion-text-center"
                             >
                                 {{ syncProgress.current }} von {{ syncProgress.total }} Dateien
                                 heruntergeladen
                             </p>
-                            <p v-else class="m-0 text-center">Daten werden geladen...</p>
+                            <p v-else class="ion-no-margin ion-text-center">
+                                Daten werden geladen...
+                            </p>
                             <ion-progress-bar
                                 v-if="syncProgress.phase === 'files' && syncProgress.total > 0"
                                 :value="syncProgress.current / syncProgress.total"
@@ -109,8 +114,8 @@
                         <ion-card-title>Hinweise</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list>
-                            <ion-item lines="none">
+                        <ion-list class="transparent">
+                            <ion-item lines="none" class="transparent">
                                 <ion-icon
                                     :icon="wifiOutline"
                                     slot="start"
@@ -196,12 +201,9 @@ function formatSyncTime(date: Date): string {
 </script>
 
 <style scoped>
-/* DownloadPage specific styles - layout handled by Tailwind */
-ion-list {
-    background: transparent;
-}
-
-ion-item {
-    --background: transparent;
+.sync-description {
+    color: var(--ion-color-medium);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
 }
 </style>

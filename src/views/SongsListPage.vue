@@ -3,35 +3,27 @@
         <ion-content :fullscreen="true">
             <!-- Back button and title integrated into content -->
             <div class="page-header">
-                <ion-button fill="clear" class="back-button m-0" @click="$router.back()">
+                <ion-button fill="clear" class="back-button" @click="$router.back()">
                     <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
                 </ion-button>
                 <h1 class="page-title">Gesangbuch</h1>
             </div>
 
             <!-- Loading State -->
-            <div
-                v-if="isLoading"
-                class="flex flex-col items-center justify-center gap-4"
-                style="height: calc(100vh - 80px)"
-            >
+            <div v-if="isLoading" class="state-container">
                 <ion-spinner name="crescent"></ion-spinner>
                 <p>Lieder werden synchronisiert...</p>
             </div>
 
             <!-- Error State -->
-            <ion-card v-else-if="error" color="danger" class="m-4">
+            <ion-card v-else-if="error" color="danger" class="ion-margin">
                 <ion-card-content>
                     <p>{{ error }}</p>
                 </ion-card-content>
             </ion-card>
 
             <!-- Empty State -->
-            <div
-                v-else-if="!hasSongs"
-                class="flex flex-col items-center justify-center text-center p-8 text-[color:var(--ion-color-medium)]"
-                style="height: calc(100vh - 80px)"
-            >
+            <div v-else-if="!hasSongs" class="state-container empty-state">
                 <ion-icon :icon="musicalNotesOutline" size="large"></ion-icon>
                 <h2>Keine Lieder vorhanden</h2>
                 <p>Tippen Sie auf das Sync-Symbol, um Lieder zu laden.</p>
@@ -56,10 +48,7 @@
             </ion-list>
 
             <!-- Last Sync Info -->
-            <div
-                v-if="lastSyncTime"
-                class="text-center p-4 text-sm text-[color:var(--ion-color-medium)]"
-            >
+            <div v-if="lastSyncTime" class="sync-info">
                 <p>Zuletzt synchronisiert: {{ formatSyncTime(lastSyncTime) }}</p>
             </div>
 
@@ -125,9 +114,8 @@ function formatSyncTime(date: Date): string {
 </script>
 
 <style scoped>
-/* SongsListPage specific styles - layout handled by Tailwind */
 .authors {
-    font-size: 0.875rem;
+    font-size: var(--font-size-sm);
     color: var(--ion-color-medium);
 }
 
