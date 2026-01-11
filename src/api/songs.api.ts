@@ -70,7 +70,7 @@ function getCurrentToken(): string | null {
 }
 
 // Transform nested Directus response to flat Song structure
-function transformSong(directusSong: DirectusGesangbuchlied): Song {
+function transformSong(directusSong: DirectusGesangbuchlied, index: number): Song {
     const textAutoren: Autor[] =
         directusSong.textId?.autorId?.map((a) => ({
             vorname: a.autor_id.vorname,
@@ -95,6 +95,7 @@ function transformSong(directusSong: DirectusGesangbuchlied): Song {
 
     return {
         id: directusSong.id,
+        index,
         titel: directusSong.titel,
         strophen: directusSong.textId?.strophenEinzeln || [],
         textAutoren,
@@ -115,7 +116,7 @@ export async function fetchSongs(): Promise<Song[]> {
 
         const response = await directusClient.query<DirectusResponse>(SONGS_QUERY);
 
-        return response.gesangbuchlied.map(transformSong);
+        return response.gesangbuchlied.map((song, index) => transformSong(song, index + 1));
     } catch (error) {
         // If unauthorized, try to refresh token and retry
         if (error instanceof Error && error.message.includes('401')) {
@@ -126,7 +127,7 @@ export async function fetchSongs(): Promise<Song[]> {
                     await directusClient.setToken(newToken);
                 }
                 const response = await directusClient.query<DirectusResponse>(SONGS_QUERY);
-                return response.gesangbuchlied.map(transformSong);
+                return response.gesangbuchlied.map((song, index) => transformSong(song, index + 1));
             }
         }
         console.error('Error fetching songs from Directus:', error);

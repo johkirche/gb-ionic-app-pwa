@@ -153,8 +153,8 @@ export const useUserStore = defineStore('user', () => {
         }
     }
 
-    // Initialize store on creation
-    loadUserFromDB();
+    // Initialize store on creation - expose promise for router guard
+    const initPromise = loadUserFromDB();
 
     return {
         // State
@@ -176,5 +176,8 @@ export const useUserStore = defineStore('user', () => {
         updateTokens,
         setSkipAuth,
         logout,
+
+        // Initialization promise
+        initPromise,
     };
 });

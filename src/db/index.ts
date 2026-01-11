@@ -15,6 +15,7 @@ export interface NotenFile {
 
 export interface Song {
     id: string;
+    index: number;
     titel: string;
     strophen: string[];
     textAutoren: Autor[];

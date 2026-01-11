@@ -59,8 +59,12 @@ const router = createRouter({
 });
 
 // Navigation guard for authentication
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const userStore = useUserStore();
+
+    // Wait for user data to be loaded from IndexedDB
+    await userStore.initPromise;
+
     const requiresAuth = to.meta.requiresAuth;
 
     // If skip auth is enabled, allow all navigation

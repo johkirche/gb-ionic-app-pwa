@@ -136,6 +136,22 @@ export const useSongsStore = defineStore('songs', () => {
         }
     }
 
+    async function clearAllData() {
+        try {
+            error.value = null;
+            await db.transaction('rw', db.songs, db.files, async () => {
+                await db.songs.clear();
+                await db.files.clear();
+            });
+            songs.value = [];
+            lastSyncTime.value = null;
+        } catch (err) {
+            console.error('Error clearing data:', err);
+            error.value = 'Failed to clear local data';
+            throw err;
+        }
+    }
+
     // Initialize on store creation
     loadSongsFromDB();
 
@@ -154,5 +170,6 @@ export const useSongsStore = defineStore('songs', () => {
         syncAll,
         getFileBlob,
         getStoredFilesCount,
+        clearAllData,
     };
 });

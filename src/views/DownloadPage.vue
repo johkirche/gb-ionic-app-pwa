@@ -132,13 +132,39 @@
                         </ion-list>
                     </ion-card-content>
                 </ion-card>
+
+                <!-- Delete Data Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title>Daten löschen</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <p class="sync-description">
+                            Löscht alle lokal gespeicherten Lieder und Notendateien. Diese können
+                            jederzeit erneut synchronisiert werden.
+                        </p>
+
+                        <ion-button
+                            expand="block"
+                            color="danger"
+                            @click="handleDelete"
+                            :disabled="
+                                isSyncing || isDeleting || (songsCount === 0 && filesCount === 0)
+                            "
+                            size="large"
+                        >
+                            <ion-icon slot="start" :icon="trashOutline"></ion-icon>
+                            Alle Daten löschen
+                        </ion-button>
+                    </ion-card-content>
+                </ion-card>
             </div>
         </ion-content>
     </ion-page>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import {
     IonButton,
@@ -154,6 +180,7 @@ import {
     IonPage,
     IonProgressBar,
     IonSpinner,
+    alertController,
 } from '@ionic/vue';
 import {
     arrowBackOutline,
@@ -161,6 +188,7 @@ import {
     musicalNotesOutline,
     syncOutline,
     timeOutline,
+    trashOutline,
     wifiOutline,
 } from 'ionicons/icons';
 import { storeToRefs } from 'pinia';
@@ -168,27 +196,59 @@ import { storeToRefs } from 'pinia';
 import { useSongsStore } from '@/stores/songs';
 
 const songsStore = useSongsStore();
-const { isSyncing, error, lastSyncTime, syncProgress } = storeToRefs(songsStore);
+const { isSyncing, error, lastSyncTime, syncProgress, songs } = storeToRefs(songsStore);
 
-const songsCount = ref(0);
+const songsCount = computed(() => songs.value.length);
 const filesCount = ref(0);
+const isDeleting = ref(false);
 
 // Load counts on mount
 onMounted(async () => {
-    await updateCounts();
+    await updateFilesCount();
 });
 
-async function updateCounts() {
-    songsCount.value = songsStore.songs.length;
+async function updateFilesCount() {
     filesCount.value = await songsStore.getStoredFilesCount();
 }
 
 async function handleSync() {
     try {
         await songsStore.syncAll();
-        await updateCounts();
+        await updateFilesCount();
     } catch (err) {
         console.error('Sync failed:', err);
+    }
+}
+
+async function handleDelete() {
+    const alert = await alertController.create({
+        header: 'Daten löschen',
+        message: 'Möchten Sie wirklich alle lokal gespeicherten Lieder und Notendateien löschen?',
+        buttons: [
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+            },
+            {
+                text: 'Löschen',
+                role: 'destructive',
+            },
+        ],
+    });
+    await alert.present();
+
+    const { role } = await alert.onDidDismiss();
+
+    if (role === 'destructive') {
+        isDeleting.value = true;
+        try {
+            await songsStore.clearAllData();
+            await updateFilesCount();
+        } catch (err) {
+            console.error('Delete failed:', err);
+        } finally {
+            isDeleting.value = false;
+        }
     }
 }
 
