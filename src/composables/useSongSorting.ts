@@ -1,6 +1,6 @@
 import { type Ref, computed, ref } from 'vue';
 
-import type { Song } from '@/db';
+import type { Category, Song } from '@/db';
 
 export type SortMode = 'index' | 'alphabetical' | 'category';
 
@@ -9,18 +9,42 @@ export interface SortOption {
     label: string;
     icon: string;
     showHeaders: boolean;
+    showIndexScroll: boolean; // Whether to show the index scroll sidebar
 }
 
 export const SORT_OPTIONS: SortOption[] = [
-    { value: 'index', label: 'Nummer', icon: 'list-outline', showHeaders: false },
-    { value: 'alphabetical', label: 'Alphabetisch', icon: 'text-outline', showHeaders: true },
-    { value: 'category', label: 'Kategorie', icon: 'pricetag-outline', showHeaders: true },
+    {
+        value: 'index',
+        label: 'Nummer',
+        icon: 'list-outline',
+        showHeaders: false,
+        showIndexScroll: true,
+    },
+    {
+        value: 'alphabetical',
+        label: 'Alphabetisch',
+        icon: 'text-outline',
+        showHeaders: true,
+        showIndexScroll: true,
+    },
+    {
+        value: 'category',
+        label: 'Kategorie',
+        icon: 'pricetag-outline',
+        showHeaders: true,
+        showIndexScroll: false,
+    },
 ];
+
+// Minimum number of songs for a category to be shown separately
+// Categories with fewer songs will be merged into "Sonstige"
+const MIN_CATEGORY_ENTRIES = 0;
 
 export interface SongSection {
     key: string;
     label: string;
     songs: Song[];
+    categoryIndex?: number; // For category sorting
 }
 
 export interface IndexItem {
@@ -41,6 +65,9 @@ export function useSongSorting(songs: Ref<Song[]>) {
 
     // Check if headers should be shown for current sort mode
     const showHeaders = computed(() => currentSortOption.value.showHeaders);
+
+    // Check if index scroll should be shown for current sort mode
+    const showIndexScroll = computed(() => currentSortOption.value.showIndexScroll);
 
     // Sort and group songs based on current mode
     const sortedSections = computed((): SongSection[] => {
@@ -75,6 +102,7 @@ export function useSongSorting(songs: Ref<Song[]>) {
         sortMode,
         currentSortOption,
         showHeaders,
+        showIndexScroll,
         sortedSections,
         sortedSongs,
         indexItems,
@@ -90,7 +118,7 @@ function groupByIndex(songs: Song[]): SongSection[] {
 
     for (const song of sorted) {
         // Calculate tenner group: 0 for 1-9, 10 for 10-19, etc.
-        const tenner = Math.floor((song.index - 1) / 20) * 20;
+        const tenner = Math.floor((song.index - 1) / 10) * 10;
         const key = tenner === 0 ? 1 : tenner;
 
         if (!groups.has(key)) {
@@ -143,33 +171,82 @@ function groupByAlphabet(songs: Song[]): SongSection[] {
 
 /**
  * Group songs by category
+ * Categories with fewer than MIN_CATEGORY_ENTRIES songs are merged into "Sonstige"
  */
 function groupByCategory(songs: Song[]): SongSection[] {
-    const groups = new Map<string, Song[]>();
+    // Map: categoryIndex -> { category info, songs }
+    const groups = new Map<number, { category: Category; songs: Song[] }>();
+    const uncategorizedSongs: Song[] = [];
 
     for (const song of songs) {
-        const categories = song.kategorien.length > 0 ? song.kategorien : ['Unkategorisiert'];
+        if (song.kategorien.length === 0) {
+            uncategorizedSongs.push(song);
+            continue;
+        }
 
         // Add song to each of its categories
-        for (const category of categories) {
-            if (!groups.has(category)) {
-                groups.set(category, []);
+        for (const category of song.kategorien) {
+            if (!groups.has(category.index)) {
+                groups.set(category.index, { category, songs: [] });
             }
-            groups.get(category)!.push(song);
+            groups.get(category.index)!.songs.push(song);
         }
     }
 
-    // Sort categories alphabetically, with Unkategorisiert at the end
-    return Array.from(groups.entries())
-        .sort(([a], [b]) => {
-            if (a === 'Unkategorisiert') return 1;
-            if (b === 'Unkategorisiert') return -1;
-            return a.localeCompare(b, 'de');
-        })
-        .map(([category, groupSongs]) => ({
-            key: category,
-            label: category,
-            // Sort songs within category by title
-            songs: [...groupSongs].sort((a, b) => a.titel.localeCompare(b.titel, 'de')),
-        }));
+    // Separate categories into main and small ones
+    const mainCategories: SongSection[] = [];
+    const smallCategorySongs: Song[] = [];
+    const seenSongIds = new Set<string>(); // Avoid duplicates in "Sonstige"
+
+    for (const [, { category, songs: categorySongs }] of groups) {
+        if (categorySongs.length >= MIN_CATEGORY_ENTRIES) {
+            mainCategories.push({
+                key: String(category.index),
+                label: category.name?.trim() || 'Unbenannt',
+                categoryIndex: category.index,
+                songs: [...categorySongs].sort((a, b) => a.titel.localeCompare(b.titel, 'de')),
+            });
+        } else {
+            // Add to "Sonstige" but avoid duplicates
+            for (const song of categorySongs) {
+                if (!seenSongIds.has(song.id)) {
+                    seenSongIds.add(song.id);
+                    smallCategorySongs.push(song);
+                }
+            }
+        }
+    }
+
+    console.log(
+        'Main categories:',
+        mainCategories.map((c) => ({
+            index: c.categoryIndex,
+            label: c.label,
+            songCount: c.songs.length,
+        })),
+    );
+    console.log('Small category songs count:', smallCategorySongs.length);
+
+    // Sort main categories by their index
+    mainCategories.sort((a, b) => (a.categoryIndex ?? 0) - (b.categoryIndex ?? 0));
+
+    // Add "Sonstige" if there are small category songs
+    if (smallCategorySongs.length > 0) {
+        mainCategories.push({
+            key: 'sonstige',
+            label: 'Sonstige',
+            songs: [...smallCategorySongs].sort((a, b) => a.titel.localeCompare(b.titel, 'de')),
+        });
+    }
+
+    // Add "Unkategorisiert" at the end if there are uncategorized songs
+    if (uncategorizedSongs.length > 0) {
+        mainCategories.push({
+            key: 'unkategorisiert',
+            label: 'Unkategorisiert',
+            songs: [...uncategorizedSongs].sort((a, b) => a.titel.localeCompare(b.titel, 'de')),
+        });
+    }
+
+    return mainCategories;
 }

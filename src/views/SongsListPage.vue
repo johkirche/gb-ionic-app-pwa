@@ -6,23 +6,29 @@
             :scroll-events="true"
             @ionScroll="onScroll"
         >
-            <!-- Back button and title integrated into content -->
-            <div class="page-header">
-                <ion-button fill="clear" class="back-button" @click="$router.back()">
-                    <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
-                </ion-button>
-                <h1 class="page-title">Gesangbuch</h1>
-
-                <!-- Sort Mode Selector -->
-                <ion-button
-                    v-if="hasSongs"
-                    fill="clear"
-                    class="sort-button"
-                    @click="showSortOptions = true"
-                >
-                    <ion-icon slot="icon-only" :icon="currentSortIcon"></ion-icon>
-                </ion-button>
-            </div>
+            <!-- Toolbar with Search, Filter, Sort -->
+            <SongToolbar
+                title="Gesangbuch"
+                :search-query="filters.searchQuery"
+                :selected-categories="filters.selectedCategories"
+                :has-notes="filters.hasNotes"
+                :has-melody="filters.hasMelody"
+                :filter-index-range="filters.indexRange"
+                :active-filter-count="activeFilterCount"
+                :has-active-filters="hasActiveFilters"
+                :sort-mode="sortMode"
+                :result-count="filteredSongs.length"
+                :total-count="songs.length"
+                @back="$router.back()"
+                @search="setSearchQuery"
+                @clear-search="clearSearch"
+                @open-filters="openFilters"
+                @open-sort="showSortOptions = true"
+                @toggle-category="toggleCategory"
+                @set-has-notes="setHasNotes"
+                @set-has-melody="setHasMelody"
+                @set-index-range="setIndexRange"
+            />
 
             <!-- Sort Options Action Sheet -->
             <ion-action-sheet
@@ -30,6 +36,24 @@
                 header="Sortierung"
                 :buttons="sortActionButtons"
                 @didDismiss="showSortOptions = false"
+            />
+
+            <!-- Filter Bottom Drawer -->
+            <SongFilterDrawer
+                :is-open="showFilterDrawer"
+                :available-categories="availableCategories"
+                :selected-categories="filters.selectedCategories"
+                :has-notes="filters.hasNotes"
+                :has-melody="filters.hasMelody"
+                :filter-index-range="filters.indexRange"
+                :index-range="indexRange"
+                :has-active-filters="hasActiveFilters"
+                @close="showFilterDrawer = false"
+                @toggle-category="toggleCategory"
+                @set-has-notes="setHasNotes"
+                @set-has-melody="setHasMelody"
+                @set-index-range="setIndexRange"
+                @clear-all="clearFiltersKeepSearch"
             />
 
             <!-- Loading State -->
@@ -45,15 +69,27 @@
                 </ion-card-content>
             </ion-card>
 
-            <!-- Empty State -->
+            <!-- Empty State (no songs at all) -->
             <div v-else-if="!hasSongs" class="state-container empty-state">
                 <ion-icon :icon="musicalNotesOutline" size="large"></ion-icon>
                 <h2>Keine Lieder vorhanden</h2>
                 <p>Tippen Sie auf das Sync-Symbol, um Lieder zu laden.</p>
             </div>
 
+            <!-- No Results State (filtered to nothing) -->
+            <div v-else-if="sortedSections.length === 0" class="state-container empty-state">
+                <ion-icon :icon="searchOutline" size="large"></ion-icon>
+                <h2>Keine Ergebnisse</h2>
+                <p>Keine Lieder entsprechen den Filterkriterien.</p>
+                <ion-button fill="outline" @click="clearAllFilters">Filter zurücksetzen</ion-button>
+            </div>
+
             <!-- Songs List with Sections -->
-            <ion-list v-else class="songs-list">
+            <ion-list
+                v-else
+                class="songs-list"
+                :class="{ 'with-index-scroll': isIndexScrollerVisible }"
+            >
                 <template v-for="section in sortedSections" :key="section.key">
                     <!-- Section Header (only shown when showHeaders is true) -->
                     <SongSectionHeader
@@ -70,7 +106,7 @@
                         detail
                         :data-section="section.key"
                     >
-                        <ion-label>
+                        <ion-label class="ion-padding-horizontal">
                             <h2>
                                 <span v-if="sortMode === 'index'" class="song-index">
                                     {{ song.index }}.
@@ -78,7 +114,7 @@
                                 {{ song.titel }}
                             </h2>
                             <p v-if="song.kategorien.length > 0 && sortMode !== 'category'">
-                                {{ song.kategorien.join(', ') }}
+                                {{ formatCategories(song.kategorien) }}
                             </p>
                             <p v-if="song.textAutoren.length > 0" class="authors">
                                 Text: {{ formatAuthors(song.textAutoren) }}
@@ -95,18 +131,11 @@
             <div v-if="lastSyncTime" class="sync-info">
                 <p>Zuletzt synchronisiert: {{ formatSyncTime(lastSyncTime) }}</p>
             </div>
-
-            <!-- Floating Action Button for Download Page -->
-            <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-                <ion-fab-button @click="navigateToDownload">
-                    <ion-icon :icon="downloadOutline"></ion-icon>
-                </ion-fab-button>
-            </ion-fab>
         </ion-content>
 
         <!-- Index Scroll Sidebar -->
         <IndexScroll
-            v-if="hasSongs && indexItems.length > 1"
+            v-if="isIndexScrollerVisible"
             :items="indexItems"
             :active-key="activeSection"
             @select="scrollToSection"
@@ -134,25 +163,25 @@ import {
     type ScrollDetail,
 } from '@ionic/vue';
 import {
-    arrowBackOutline,
     checkmarkOutline,
     downloadOutline,
-    listOutline,
     musicalNotesOutline,
-    pricetagOutline,
-    textOutline,
+    searchOutline,
 } from 'ionicons/icons';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
 
-import { SORT_OPTIONS, type SortMode, useSongSorting } from '@/composables/useSongSorting';
+import { useSongFiltering } from '@/composables/useSongFiltering';
+import { SORT_OPTIONS, useSongSorting } from '@/composables/useSongSorting';
 
 import IndexScroll from '@/components/IndexScroll.vue';
+import SongFilterDrawer from '@/components/SongFilterDrawer.vue';
 import SongSectionHeader from '@/components/SongSectionHeader.vue';
+import SongToolbar from '@/components/SongToolbar.vue';
 
-import type { Autor } from '@/db';
+import type { Autor, Category } from '@/db';
 
 const songsStore = useSongsStore();
 const { songs, isLoading, error, lastSyncTime, hasSongs } = storeToRefs(songsStore);
@@ -161,21 +190,47 @@ const router = useRouter();
 // Content ref for scroll operations
 const contentRef = ref<InstanceType<typeof IonContent> | null>(null);
 
-// Sorting
-const { sortMode, showHeaders, sortedSections, indexItems } = useSongSorting(songs);
+// Filtering - applied first
+const {
+    filters,
+    filteredSongs,
+    isSearchActive,
+    hasActiveFilters,
+    activeFilterCount,
+    availableCategories,
+    indexRange,
+    setSearchQuery,
+    clearSearch,
+    toggleCategory,
+    setHasNotes,
+    setHasMelody,
+    setIndexRange,
+    clearAllFilters,
+    clearFiltersKeepSearch,
+} = useSongFiltering(songs);
+
+// Sorting - applied to filtered songs
+const { sortMode, showHeaders, showIndexScroll, sortedSections, indexItems } =
+    useSongSorting(filteredSongs);
 
 // UI State
 const showSortOptions = ref(false);
+const showFilterDrawer = ref(false);
 const activeSection = ref<string>('');
 
-// Map sort modes to icons
-const sortModeIcons: Record<SortMode, string> = {
-    index: listOutline,
-    alphabetical: textOutline,
-    category: pricetagOutline,
-};
+// Open filter drawer
+function openFilters() {
+    showFilterDrawer.value = true;
+}
 
-const currentSortIcon = computed(() => sortModeIcons[sortMode.value]);
+const isIndexScrollerVisible = computed(() => {
+    return (
+        showIndexScroll.value &&
+        indexItems.value.length > 1 &&
+        !isSearchActive.value &&
+        !hasActiveFilters.value
+    );
+});
 
 // Action sheet buttons for sort options
 const sortActionButtons = computed(() => [
@@ -196,23 +251,22 @@ const sortActionButtons = computed(() => [
     },
 ]);
 
-// Scroll to a specific section
+// Scroll to a specific section - always scroll to first item in section
 async function scrollToSection(sectionKey: string) {
-    const element = document.getElementById(`section-${sectionKey}`);
-    if (element && contentRef.value) {
-        const scrollElement = await contentRef.value.$el.getScrollElement();
-        const headerOffset = 60; // Account for sticky header
-        const elementTop = element.offsetTop - headerOffset;
+    if (!contentRef.value) {
+        return;
+    }
 
-        await contentRef.value.$el.scrollToPoint(0, elementTop, 300);
-    } else if (!showHeaders.value) {
-        // For index mode without headers, find first item in section
-        const firstItem = document.querySelector(`[data-section="${sectionKey}"]`);
-        if (firstItem && contentRef.value) {
-            const scrollElement = await contentRef.value.$el.getScrollElement();
-            const elementTop = (firstItem as HTMLElement).offsetTop - 60;
-            await contentRef.value.$el.scrollToPoint(0, elementTop, 300);
-        }
+    // Always find the first item in the section (works for all sort modes)
+    const firstItem = document.querySelector(`[data-section="${sectionKey}"]`) as HTMLElement;
+
+    if (firstItem) {
+        const scrollElement = await contentRef.value.$el.getScrollElement();
+        const headerOffset = 80; // Account for toolbar
+        const sectionHeaderOffset = showHeaders.value ? 40 : 0; // Account for sticky section header if shown
+        const elementTop = firstItem.offsetTop - headerOffset - sectionHeaderOffset;
+
+        await contentRef.value.$el.scrollToPoint(0, Math.max(0, elementTop), 300);
     }
 }
 
@@ -242,6 +296,11 @@ function navigateToDownload() {
     router.push('/download');
 }
 
+// Format categories for display
+function formatCategories(categories: Category[]): string {
+    return categories.map((c) => c.name).join(', ');
+}
+
 // Format authors for display
 function formatAuthors(authors: Autor[]): string {
     return authors
@@ -262,23 +321,6 @@ function formatSyncTime(date: Date): string {
 </script>
 
 <style scoped>
-.page-header {
-    display: flex;
-    align-items: center;
-    padding: 8px 8px 8px 4px;
-}
-
-.page-title {
-    flex: 1;
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.sort-button {
-    --padding-start: 8px;
-    --padding-end: 8px;
-}
-
 .authors {
     font-size: var(--font-size-sm);
     color: var(--ion-color-medium);
@@ -286,7 +328,10 @@ function formatSyncTime(date: Date): string {
 
 .songs-list {
     padding-top: 0;
-    padding-right: 32px; /* Make room for index scroll */
+}
+
+.songs-list.with-index-scroll ion-item {
+    --inner-padding-end: 40px;
 }
 
 .song-index {
@@ -297,9 +342,37 @@ function formatSyncTime(date: Date): string {
 
 .sync-info {
     padding: 16px;
-    padding-right: 48px;
     text-align: center;
     color: var(--ion-color-medium);
     font-size: 0.85rem;
+}
+
+.state-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.state-container ion-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+}
+
+.state-container h2 {
+    margin: 0 0 8px;
+    color: var(--ion-color-dark);
+}
+
+.state-container p {
+    margin: 0 0 16px;
+    color: var(--ion-color-medium);
+}
+
+.empty-state ion-button {
+    margin-top: 8px;
 }
 </style>

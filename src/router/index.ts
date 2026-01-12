@@ -6,6 +6,7 @@ import { useUserStore } from '@/stores/user';
 import DownloadPage from '../views/DownloadPage.vue';
 import HomePage from '../views/HomePage.vue';
 import LoginPage from '../views/LoginPage.vue';
+import OnboardingPage from '../views/OnboardingPage.vue';
 import PasswordResetPage from '../views/PasswordResetPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
 import SongsListPage from '../views/SongsListPage.vue';
@@ -32,6 +33,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Register',
         component: RegisterPage,
         meta: { requiresAuth: false },
+    },
+    {
+        path: '/onboarding',
+        name: 'Onboarding',
+        component: OnboardingPage,
+        meta: { requiresAuth: true },
     },
     {
         path: '/password-reset',

@@ -13,6 +13,11 @@ export interface NotenFile {
     blob?: Blob; // Store the actual file data
 }
 
+export interface Category {
+    index: number;
+    name: string;
+}
+
 export interface Song {
     id: string;
     index: number;
@@ -22,7 +27,7 @@ export interface Song {
     melodieAbc: string;
     melodieAutoren: Autor[];
     noten: NotenFile[];
-    kategorien: string[];
+    kategorien: Category[];
 }
 
 // Auth related types

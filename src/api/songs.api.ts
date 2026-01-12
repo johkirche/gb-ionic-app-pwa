@@ -2,7 +2,7 @@ import { useUserStore } from '@/stores/user';
 
 import { refreshAuthToken } from '@/composables/useAuth';
 
-import type { Autor, NotenFile, Song } from '@/db';
+import type { Autor, Category, NotenFile, Song } from '@/db';
 import { directusClient } from '@/services/directus';
 
 /**
@@ -29,6 +29,7 @@ interface DirectusNotenFile {
 
 interface DirectusKategorie {
     kategorie_id: {
+        id: number;
         name: string;
     };
 }
@@ -54,7 +55,7 @@ interface DirectusResponse {
 
 // GraphQL query
 const SONGS_QUERY = `
-    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name } } } }
+    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
 `;
 
 // Get current token from user store or env variable for debug mode
@@ -91,7 +92,11 @@ function transformSong(directusSong: DirectusGesangbuchlied, index: number): Son
             id: n.directus_files_id.id,
         })) || [];
 
-    const kategorien: string[] = directusSong.kategorieId?.map((k) => k.kategorie_id.name) || [];
+    const kategorien: Category[] =
+        directusSong.kategorieId?.map((k) => ({
+            name: k.kategorie_id.name,
+            index: k.kategorie_id.id,
+        })) || [];
 
     return {
         id: directusSong.id,
