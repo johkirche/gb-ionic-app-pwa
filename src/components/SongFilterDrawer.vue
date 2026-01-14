@@ -50,13 +50,9 @@
             <div class="filter-section dev-section">
                 <ion-label class="section-label">Dev Filter</ion-label>
 
-                <ion-item lines="none">
-                    <ion-label>Hat Noten</ion-label>
-                    <ion-segment
-                        :value="hasNotesValue"
-                        @ionChange="onHasNotesChange($event)"
-                        mode="ios"
-                    >
+                <div class="filter-row">
+                    <ion-label class="filter-label">Hat Noten (PDF)</ion-label>
+                    <ion-segment :value="hasNotesValue" @ionChange="onHasNotesChange($event)">
                         <ion-segment-button value="all">
                             <ion-label>Alle</ion-label>
                         </ion-segment-button>
@@ -67,10 +63,10 @@
                             <ion-label>Nein</ion-label>
                         </ion-segment-button>
                     </ion-segment>
-                </ion-item>
+                </div>
 
-                <ion-item lines="none">
-                    <ion-label>Hat Melodie</ion-label>
+                <div class="filter-row">
+                    <ion-label class="filter-label">Hat ABC Melodie</ion-label>
                     <ion-segment :value="hasMelodyValue" @ionChange="onHasMelodyChange($event)">
                         <ion-segment-button value="all">
                             <ion-label>Alle</ion-label>
@@ -82,31 +78,31 @@
                             <ion-label>Nein</ion-label>
                         </ion-segment-button>
                     </ion-segment>
-                </ion-item>
+                </div>
 
-                <ion-label class="section-label" style="margin-top: 16px">
-                    Liedernummer: {{ currentMin }} - {{ currentMax }}
-                </ion-label>
-
-                <ion-range
-                    :dual-knobs="true"
-                    :min="indexRange.min"
-                    :max="indexRange.max"
-                    :value="{ lower: currentMin, upper: currentMax }"
-                    :pin="true"
-                    :snaps="false"
-                    @ionChange="onRangeChange($event)"
-                />
-
-                <ion-button
-                    v-if="isRangeActive"
-                    fill="clear"
-                    size="small"
-                    expand="block"
-                    @click="$emit('setIndexRange', null)"
-                >
-                    Bereich zurücksetzen
-                </ion-button>
+                <div class="filter-row">
+                    <ion-label class="filter-label">
+                        Liedernummer: {{ currentMin }} - {{ currentMax }}
+                    </ion-label>
+                    <ion-range
+                        :dual-knobs="true"
+                        :min="indexRange.min"
+                        :max="indexRange.max"
+                        :value="{ lower: currentMin, upper: currentMax }"
+                        :pin="true"
+                        :snaps="false"
+                        @ionChange="onRangeChange($event)"
+                    />
+                    <ion-button
+                        v-if="isRangeActive"
+                        fill="clear"
+                        size="small"
+                        expand="block"
+                        @click="$emit('setIndexRange', null)"
+                    >
+                        Bereich zurücksetzen
+                    </ion-button>
+                </div>
             </div>
         </ion-content>
     </ion-modal>
@@ -123,7 +119,6 @@ import {
     IonContent,
     IonHeader,
     IonIcon,
-    IonItem,
     IonLabel,
     IonModal,
     IonRange,
@@ -244,12 +239,22 @@ function onRangeChange(event: CustomEvent) {
     border-top: 1px solid var(--ion-color-light-shade);
 }
 
-ion-item {
-    --padding-start: 0;
-    --inner-padding-end: 0;
+.filter-row {
+    margin-bottom: 16px;
 }
 
-ion-segment {
-    min-width: 180px;
+.filter-label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+    margin-bottom: 8px;
+}
+
+.filter-row ion-segment {
+    width: 100%;
+}
+
+.filter-row ion-range {
+    padding: 0;
 }
 </style>

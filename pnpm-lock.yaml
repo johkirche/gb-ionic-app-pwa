@@ -32,6 +32,9 @@ importers:
       '@ionic/vue-router':
         specifier: ^8.0.0
         version: 8.7.15(@stencil/core@4.40.1)(vue-router@4.6.4(vue@3.5.26(typescript@5.9.3)))(vue@3.5.26(typescript@5.9.3))
+      abcjs:
+        specifier: ^6.6.0
+        version: 6.6.0
       dexie:
         specifier: ^4.2.1
         version: 4.2.1
@@ -1470,6 +1473,9 @@ packages:
   abbrev@2.0.0:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  abcjs@6.6.0:
+    resolution: {integrity: sha512-lYS+qwOOxFcFY5ZjNmS1l4RT6BxGd2juBOzLD5/PfLZ+jd0zz29CMI/SwxCWb0+cdKjTBc/EHO43lUGB93FaAw==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -5019,6 +5025,8 @@ snapshots:
   '@xmldom/xmldom@0.8.11': {}
 
   abbrev@2.0.0: {}
+
+  abcjs@6.6.0: {}
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:

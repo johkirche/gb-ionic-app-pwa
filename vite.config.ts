@@ -13,6 +13,9 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
     },
+    optimizeDeps: {
+        exclude: ['@directus/sdk'],
+    },
     test: {
         globals: true,
         environment: 'jsdom',

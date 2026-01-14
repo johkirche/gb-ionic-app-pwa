@@ -14,17 +14,31 @@ export interface NotenFile {
 }
 
 export interface Category {
-    index: number;
+    index: string;
     name: string;
+}
+
+export interface Strophe {
+    text: string;
+    strophe: string;
+    aenderungsvorschlag?: string | null;
+    anmerkung?: string | null;
+}
+
+export interface MelodieAbc {
+    name: string;
+    abc_notation: string;
+    is_default: boolean;
+    file_id: string;
 }
 
 export interface Song {
     id: string;
     index: number;
     titel: string;
-    strophen: string[];
+    strophen: Strophe[];
     textAutoren: Autor[];
-    melodieAbc: string;
+    melodieAbc: MelodieAbc[];
     melodieAutoren: Autor[];
     noten: NotenFile[];
     kategorien: Category[];

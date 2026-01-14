@@ -1,5 +1,7 @@
 import { computed } from 'vue';
 
+import { readMe } from '@directus/sdk';
+
 import { useUserStore } from '@/stores/user';
 
 import type { UserData } from '@/db';
@@ -60,12 +62,11 @@ export function useAuth() {
             const expiresAt = Date.now() + (result.expires || 900000);
 
             // Fetch user data
-            const userData: any = await directusClient.request({
-                path: '/users/me',
-                params: {
+            const userData = await directusClient.request(
+                readMe({
                     fields: ['id', 'email', 'first_name', 'last_name', 'role'],
-                },
-            } as any);
+                }),
+            );
 
             // Map user data to our format
             const user: UserData = {

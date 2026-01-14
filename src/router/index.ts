@@ -9,6 +9,7 @@ import LoginPage from '../views/LoginPage.vue';
 import OnboardingPage from '../views/OnboardingPage.vue';
 import PasswordResetPage from '../views/PasswordResetPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
+import SongPage from '../views/SongPage.vue';
 import SongsListPage from '../views/SongsListPage.vue';
 
 const routes: Array<RouteRecordRaw> = [
@@ -50,6 +51,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/songs',
         name: 'Songs',
         component: SongsListPage,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/songs/:id',
+        name: 'Song',
+        component: SongPage,
         meta: { requiresAuth: true },
     },
     {

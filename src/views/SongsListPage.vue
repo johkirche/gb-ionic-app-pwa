@@ -105,6 +105,7 @@
                         button
                         detail
                         :data-section="section.key"
+                        @click="navigateToSong(song.id)"
                     >
                         <ion-label class="ion-padding-horizontal">
                             <h2>
@@ -294,6 +295,11 @@ function onScroll(event: CustomEvent<ScrollDetail>) {
 // Navigate to download page
 function navigateToDownload() {
     router.push('/download');
+}
+
+// Navigate to song detail page
+function navigateToSong(songId: string) {
+    router.push(`/songs/${songId}`);
 }
 
 // Format categories for display
