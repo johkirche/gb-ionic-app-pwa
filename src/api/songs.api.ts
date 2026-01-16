@@ -34,15 +34,28 @@ interface DirectusKategorie {
     };
 }
 
+interface DirectusStrophe {
+    strophe: string;
+    anmerkung: string | null;
+    aenderungsvorschlag: string | null;
+}
+
+interface DirectusAbcMelodie {
+    name: string;
+    abc_notation: string;
+    is_default: boolean;
+    file_id: string;
+}
+
 interface DirectusGesangbuchlied {
     id: string;
     titel: string;
     textId: {
-        strophenEinzeln: string[];
+        strophenEinzeln: DirectusStrophe[];
         autorId: DirectusAutor[];
     } | null;
     melodieId: {
-        abc_melodie: string;
+        abc_melodie: DirectusAbcMelodie[];
         autorId: DirectusAutor[];
         noten: DirectusNotenFile[];
     } | null;
@@ -55,7 +68,7 @@ interface DirectusResponse {
 
 // GraphQL query
 const SONGS_QUERY = `
-    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
+    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln { strophe anmerkung aenderungsvorschlag } autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie { name abc_notation is_default file_id } autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
 `;
 
 // Get current token from user store or env variable for debug mode
@@ -98,23 +111,16 @@ function transformSong(directusSong: DirectusGesangbuchlied, index: number): Son
             index: String(k.kategorie_id.id),
         })) || [];
 
-    // Transform strophen from string[] to Strophe[]
-    const strophen = (directusSong.textId?.strophenEinzeln || []).map((text, idx) => ({
-        text,
-        strophe: String(idx + 1),
+    // Transform strophen - flatten the structure properly
+    const strophen = (directusSong.textId?.strophenEinzeln || []).map((s, idx) => ({
+        text: s.strophe, // The actual verse text from backend
+        strophe: String(idx + 1), // Verse number
+        anmerkung: s.anmerkung || null,
+        aenderungsvorschlag: s.aenderungsvorschlag || null,
     }));
 
-    // Transform abc_melodie string to MelodieAbc[]
-    const melodieAbc = directusSong.melodieId?.abc_melodie
-        ? [
-              {
-                  name: 'Standard',
-                  abc_notation: directusSong.melodieId.abc_melodie,
-                  is_default: true,
-                  file_id: '',
-              },
-          ]
-        : [];
+    // Transform abc_melodie array - flatten the nested structure
+    const melodieAbc = directusSong.melodieId?.abc_melodie || [];
 
     return {
         id: directusSong.id,

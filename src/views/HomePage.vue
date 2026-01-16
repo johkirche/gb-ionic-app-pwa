@@ -13,7 +13,7 @@
             </ion-button>
 
             <div class="centered-container">
-                <ion-img src="/logo.png" alt="Logo" class="logo logo--md" />
+                <ion-img src="/logo.svg" alt="Logo" class="logo logo--md" />
                 <h1 class="heading-lg">Willkommen</h1>
                 <p v-if="user" class="text-description">
                     {{ user.firstName || user.email }}

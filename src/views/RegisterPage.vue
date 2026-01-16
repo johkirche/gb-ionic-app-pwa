@@ -12,23 +12,7 @@
 
             <div class="auth-container">
                 <!-- Step Indicator -->
-                <div class="step-indicator">
-                    <div
-                        class="step"
-                        :class="{ active: currentStep === 1, completed: currentStep > 1 }"
-                    >
-                        <div class="step-number">
-                            <ion-icon v-if="currentStep > 1" :icon="checkmarkOutline"></ion-icon>
-                            <span v-else>1</span>
-                        </div>
-                        <span class="step-label">Persönliche Daten</span>
-                    </div>
-                    <div class="step-line" :class="{ active: currentStep > 1 }"></div>
-                    <div class="step" :class="{ active: currentStep === 2 }">
-                        <div class="step-number">2</div>
-                        <span class="step-label">Aktivierung</span>
-                    </div>
-                </div>
+                <StepIndicator :current-step="currentStep" :total-steps="2" />
 
                 <!-- Step 1: Personal Info -->
                 <div v-if="currentStep === 1" class="step-content">
@@ -74,22 +58,24 @@
                                 helper-text="Wird für die Anmeldung und Passwort-Wiederherstellung verwendet"
                             ></ion-input>
 
-                            <ion-input
-                                v-model="password"
-                                :type="showPassword ? 'text' : 'password'"
-                                label="Passwort"
-                                label-placement="floating"
-                                required
-                                autocomplete="new-password"
-                                fill="outline"
-                                :disabled="isLoading"
-                                @ionFocus="passwordFocused = true"
-                            >
+                            <div class="password-input-wrapper">
+                                <ion-input
+                                    v-model="password"
+                                    :type="showPassword ? 'text' : 'password'"
+                                    label="Passwort"
+                                    label-placement="floating"
+                                    required
+                                    autocomplete="new-password"
+                                    fill="outline"
+                                    :disabled="isLoading"
+                                    @ionFocus="passwordFocused = true"
+                                ></ion-input>
                                 <ion-button
                                     fill="clear"
-                                    slot="end"
+                                    class="password-toggle-button"
                                     aria-label="Passwort anzeigen/verbergen"
                                     @click="showPassword = !showPassword"
+                                    tabindex="-1"
                                 >
                                     <ion-icon
                                         slot="icon-only"
@@ -97,7 +83,7 @@
                                         aria-hidden="true"
                                     ></ion-icon>
                                 </ion-button>
-                            </ion-input>
+                            </div>
 
                             <!-- Password Requirements -->
                             <Transition name="slide-fade">
@@ -135,22 +121,24 @@
                                 </div>
                             </Transition>
 
-                            <ion-input
-                                v-model="confirmPassword"
-                                :type="showConfirmPassword ? 'text' : 'password'"
-                                label="Passwort bestätigen"
-                                label-placement="floating"
-                                required
-                                autocomplete="new-password"
-                                fill="outline"
-                                :disabled="isLoading"
-                                @ionFocus="confirmPasswordFocused = true"
-                            >
+                            <div class="password-input-wrapper">
+                                <ion-input
+                                    v-model="confirmPassword"
+                                    :type="showConfirmPassword ? 'text' : 'password'"
+                                    label="Passwort bestätigen"
+                                    label-placement="floating"
+                                    required
+                                    autocomplete="new-password"
+                                    fill="outline"
+                                    :disabled="isLoading"
+                                    @ionFocus="confirmPasswordFocused = true"
+                                ></ion-input>
                                 <ion-button
                                     fill="clear"
-                                    slot="end"
+                                    class="password-toggle-button"
                                     aria-label="Passwort anzeigen/verbergen"
                                     @click="showConfirmPassword = !showConfirmPassword"
+                                    tabindex="-1"
                                 >
                                     <ion-icon
                                         slot="icon-only"
@@ -158,7 +146,7 @@
                                         aria-hidden="true"
                                     ></ion-icon>
                                 </ion-button>
-                            </ion-input>
+                            </div>
 
                             <!-- Password Match -->
                             <Transition name="slide-fade">
@@ -280,7 +268,6 @@ import {
     arrowBackOutline,
     arrowForwardOutline,
     checkmarkCircleOutline,
-    checkmarkOutline,
     ellipseOutline,
     eyeOffOutline,
     eyeOutline,
@@ -289,6 +276,8 @@ import {
 import { useRouter } from 'vue-router';
 
 import { useAuth } from '@/composables/useAuth';
+
+import StepIndicator from '@/components/utils/StepIndicator.vue';
 
 const router = useRouter();
 const { register, setSkipAuth, isLoading, error } = useAuth();
@@ -372,74 +361,19 @@ async function handleSkip() {
 </script>
 
 <style scoped>
-/* Step Indicator */
-.step-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: var(--spacing-xl);
-    padding: 0 var(--spacing-md);
-}
-
-.step {
+/* Auth Container */
+.auth-container {
+    min-height: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.step-number {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: var(--font-size-base);
-    background: var(--ion-color-light);
-    color: var(--ion-color-medium);
-    transition: all 0.3s ease;
-}
-
-.step.active .step-number {
-    background: var(--ion-color-primary);
-    color: var(--ion-color-primary-contrast);
-}
-
-.step.completed .step-number {
-    background: var(--ion-color-success);
-    color: var(--ion-color-success-contrast);
-}
-
-.step-label {
-    font-size: var(--font-size-xs);
-    color: var(--ion-color-medium);
-    text-align: center;
-    max-width: 5rem;
-}
-
-.step.active .step-label {
-    color: var(--ion-color-primary);
-    font-weight: 500;
-}
-
-.step-line {
-    flex: 1;
-    height: 2px;
-    background: var(--ion-color-light);
-    margin: 0 var(--spacing-sm);
-    margin-bottom: 1.25rem;
-    max-width: 4rem;
-    transition: background 0.3s ease;
-}
-
-.step-line.active {
-    background: var(--ion-color-success);
 }
 
 /* Step Content */
 .step-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     animation: fadeIn 0.3s ease;
 }
 
@@ -482,6 +416,22 @@ async function handleSkip() {
     --placeholder-opacity: 0.5;
     font-family: monospace;
     letter-spacing: 0.1em;
+}
+
+/* Password Input Wrapper */
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle-button {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    margin: 0;
+    --padding-start: 8px;
+    --padding-end: 8px;
 }
 
 /* Password Rules */

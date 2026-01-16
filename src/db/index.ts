@@ -19,15 +19,27 @@ export interface Category {
 }
 
 export interface Strophe {
-    text: string;
+    text?: {
+        text: string;
+        strophe: string;
+        aenderungsvorschlag?: string | null;
+        anmerkung?: string | null;
+    } | string;
     strophe: string;
     aenderungsvorschlag?: string | null;
     anmerkung?: string | null;
 }
 
-export interface MelodieAbc {
+export interface AbcNotation {
     name: string;
     abc_notation: string;
+    is_default: boolean;
+    file_id: string;
+}
+
+export interface MelodieAbc {
+    name: string;
+    abc_notation: AbcNotation[] | string;
     is_default: boolean;
     file_id: string;
 }

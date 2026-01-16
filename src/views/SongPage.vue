@@ -134,7 +134,7 @@
                 <div class="verses-section">
                     <div v-for="(strophe, idx) in song.strophen" :key="idx" class="verse">
                         <span class="verse-number">{{ idx + 1 }}.</span>
-                        <p class="verse-text" v-html="formatVerse(strophe.strophe)"></p>
+                        <p class="verse-text" v-html="formatVerse(typeof strophe.text === 'object' ? strophe.text?.strophe : strophe.text || strophe.strophe)"></p>
                     </div>
                 </div>
 
@@ -234,8 +234,19 @@ const defaultMelodyAbc = computed(() => {
     if (!Array.isArray(melodies) || melodies.length === 0) return '';
     // Find default melody or use first one
     const defaultMelody = melodies.find((m) => m.is_default) || melodies[0];
+    
+    // Handle nested abc_notation structure
+    let abcNotation: string | undefined = defaultMelody?.abc_notation as any;
+    
+    // If abc_notation is an array, get the default or first notation
+    if (Array.isArray(abcNotation)) {
+        const notation = abcNotation.find((n: any) => n.is_default) || abcNotation[0];
+        abcNotation = notation?.abc_notation;
+    }
+    
+    if (!abcNotation || typeof abcNotation !== 'string') return '';
     // Replace escaped newlines with actual newlines
-    return defaultMelody?.abc_notation?.replace(/\\n/g, '\n') || '';
+    return abcNotation.replace(/\\n/g, '\n');
 });
 
 // Check if song has melody

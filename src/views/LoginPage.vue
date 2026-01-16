@@ -3,7 +3,7 @@
         <ion-content :fullscreen="true">
             <div class="auth-container auth-container--centered">
                 <div class="section-header">
-                    <ion-img src="/logo.png" alt="Logo" class="logo logo--md" />
+                    <ion-img src="/logo.svg" alt="Logo" class="logo logo--md" />
                     <h1 class="heading-xl">Gesangbuch</h1>
                     <p class="text-muted">Melden Sie sich an, um fortzufahren</p>
                 </div>
@@ -31,6 +31,13 @@
                             autocomplete="current-password"
                             :disabled="isLoading"
                         ></ion-input>
+                    </div>
+
+                    <div v-if="error" class="error-banner ion-margin-top">
+                        <ion-icon :icon="alertCircle"></ion-icon>
+                        <ion-text>
+                            <strong>{{ error }}</strong>
+                        </ion-text>
                     </div>
 
                     <ion-button
@@ -80,10 +87,6 @@
                         Überspringen (Entwicklermodus)
                     </ion-button>
                 </form>
-
-                <ion-text v-if="error" color="danger" class="ion-margin-top">
-                    <p class="error-message">{{ error }}</p>
-                </ion-text>
             </div>
         </ion-content>
     </ion-page>
@@ -92,7 +95,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import { IonButton, IonContent, IonImg, IonInput, IonPage, IonSpinner, IonText } from '@ionic/vue';
+import {
+    IonButton,
+    IonContent,
+    IonIcon,
+    IonImg,
+    IonInput,
+    IonPage,
+    IonSpinner,
+    IonText,
+} from '@ionic/vue';
+import { alertCircle } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
@@ -136,5 +149,24 @@ async function handleSkip() {
 </script>
 
 <style scoped>
-/* LoginPage - no component-specific styles needed */
+.error-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(var(--ion-color-danger-rgb), 0.1);
+    border-left: 4px solid var(--ion-color-danger);
+    border-radius: 8px;
+}
+
+.error-banner ion-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    color: var(--ion-color-danger);
+}
+
+.error-banner ion-text {
+    flex: 1;
+    color: var(--ion-color-danger);
+}
 </style>

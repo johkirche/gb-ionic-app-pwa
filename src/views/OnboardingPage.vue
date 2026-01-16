@@ -3,14 +3,7 @@
         <ion-content :fullscreen="true">
             <div class="onboarding-container">
                 <!-- Step Indicator Dots -->
-                <div class="dot-indicator">
-                    <span
-                        v-for="step in totalSteps"
-                        :key="step"
-                        class="dot"
-                        :class="{ active: currentStep === step, completed: currentStep > step }"
-                    ></span>
-                </div>
+                <StepIndicator :current-step="currentStep" :total-steps="totalSteps" />
 
                 <!-- Step 1: Install PWA -->
                 <div v-if="currentStep === 1" class="onboarding-step">
@@ -285,6 +278,8 @@ import { useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
 
+import StepIndicator from '@/components/utils/StepIndicator.vue';
+
 const router = useRouter();
 const songsStore = useSongsStore();
 const { isSyncing, error: syncError, syncProgress } = storeToRefs(songsStore);
@@ -379,32 +374,6 @@ function skipOnboarding() {
     margin: 0 auto;
 }
 
-/* Dot Indicator */
-.dot-indicator {
-    display: flex;
-    justify-content: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-xl);
-}
-
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--ion-color-light-shade);
-    transition: all 0.3s ease;
-}
-
-.dot.active {
-    width: 24px;
-    border-radius: 4px;
-    background: var(--ion-color-primary);
-}
-
-.dot.completed {
-    background: var(--ion-color-success);
-}
-
 /* Step Content */
 .onboarding-step {
     flex: 1;
@@ -428,7 +397,7 @@ function skipOnboarding() {
     width: 5rem;
     height: 5rem;
     border-radius: 50%;
-    background: var(--ion-color-primary-tint);
+    background: rgba(var(--ion-color-primary-rgb), 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -437,7 +406,7 @@ function skipOnboarding() {
 
 .step-icon ion-icon {
     font-size: 2.5rem;
-    color: var(--ion-color-primary);
+    color: var(--ion-color-primary-shade);
 }
 
 .onboarding-title {
