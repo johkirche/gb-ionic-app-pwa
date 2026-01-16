@@ -267,7 +267,13 @@ function stopPlayback() {
 
         // Seek back to the beginning
         try {
-            synthControl.seek(0);
+            // Check if seek method exists (abcjs API may vary by version)
+            if ('seek' in synthControl && typeof synthControl.seek === 'function') {
+                synthControl.seek(0);
+            } else {
+                // Alternative: restart playback
+                synthControl.pause();
+            }
         } catch (error) {
             console.error('Error seeking to start:', error);
         }

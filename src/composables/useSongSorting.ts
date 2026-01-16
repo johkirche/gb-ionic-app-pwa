@@ -44,7 +44,7 @@ export interface SongSection {
     key: string;
     label: string;
     songs: Song[];
-    categoryIndex?: number; // For category sorting
+    categoryIndex?: string; // For category sorting
 }
 
 export interface IndexItem {
@@ -175,7 +175,7 @@ function groupByAlphabet(songs: Song[]): SongSection[] {
  */
 function groupByCategory(songs: Song[]): SongSection[] {
     // Map: categoryIndex -> { category info, songs }
-    const groups = new Map<number, { category: Category; songs: Song[] }>();
+    const groups = new Map<string, { category: Category; songs: Song[] }>();
     const uncategorizedSongs: Song[] = [];
 
     for (const song of songs) {
@@ -227,8 +227,12 @@ function groupByCategory(songs: Song[]): SongSection[] {
     );
     console.log('Small category songs count:', smallCategorySongs.length);
 
-    // Sort main categories by their index
-    mainCategories.sort((a, b) => (a.categoryIndex ?? 0) - (b.categoryIndex ?? 0));
+    // Sort main categories by their index (convert string to number for comparison)
+    mainCategories.sort((a, b) => {
+        const aIndex = parseInt(a.categoryIndex ?? '0', 10);
+        const bIndex = parseInt(b.categoryIndex ?? '0', 10);
+        return aIndex - bIndex;
+    });
 
     // Add "Sonstige" if there are small category songs
     if (smallCategorySongs.length > 0) {

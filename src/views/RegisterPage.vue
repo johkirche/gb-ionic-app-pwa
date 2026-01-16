@@ -247,6 +247,7 @@
                         </ion-button>
 
                         <ion-button
+                            v-if="showDevSkip"
                             expand="block"
                             fill="clear"
                             @click="handleSkip"
@@ -291,6 +292,9 @@ import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 const { register, setSkipAuth, isLoading, error } = useAuth();
+
+// Show dev skip button only if env var is set
+const showDevSkip = import.meta.env.VITE_SHOW_DEV_SKIP === 'true';
 
 // Step management
 const currentStep = ref(1);

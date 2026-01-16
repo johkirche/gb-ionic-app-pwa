@@ -68,6 +68,7 @@
                     </ion-button>
 
                     <ion-button
+                        v-if="showDevSkip"
                         expand="block"
                         fill="clear"
                         @click="handleSkip"
@@ -94,13 +95,19 @@ import { ref } from 'vue';
 import { IonButton, IonContent, IonImg, IonInput, IonPage, IonSpinner, IonText } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 
+import { useSongsStore } from '@/stores/songs';
+
 import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
 const { login, setSkipAuth, isLoading, error } = useAuth();
+const songsStore = useSongsStore();
 
 const email = ref('');
 const password = ref('');
+
+// Show dev skip button only if env var is set
+const showDevSkip = import.meta.env.VITE_SHOW_DEV_SKIP === 'true';
 
 async function handleLogin() {
     if (!email.value || !password.value) {
@@ -110,8 +117,15 @@ async function handleLogin() {
     const result = await login(email.value, password.value);
 
     if (result.success) {
-        // Navigate to home, which will handle routing based on activation status
-        router.push('/home');
+        // Check if user has downloaded data
+        const hasData = songsStore.songs.length > 0;
+
+        // If no data, go to onboarding; otherwise go to home
+        if (!hasData) {
+            router.push('/onboarding');
+        } else {
+            router.push('/home');
+        }
     }
 }
 

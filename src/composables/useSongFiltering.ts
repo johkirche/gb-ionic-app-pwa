@@ -161,11 +161,9 @@ export function useSongFiltering(songs: Ref<Song[]>) {
 
         // Has melody filter
         if (f.hasMelody === true) {
-            result = result.filter((song) => song.melodieAbc && song.melodieAbc.trim().length > 0);
+            result = result.filter((song) => song.melodieAbc && song.melodieAbc.length > 0);
         } else if (f.hasMelody === false) {
-            result = result.filter(
-                (song) => !song.melodieAbc || song.melodieAbc.trim().length === 0,
-            );
+            result = result.filter((song) => !song.melodieAbc || song.melodieAbc.length === 0);
         }
 
         // Index range filter

@@ -342,7 +342,10 @@ async function installPWA() {
 }
 
 function nextStep() {
-    if (currentStep.value < totalSteps) {
+    // Skip PWA step if already installed
+    if (currentStep.value === 1 && isStandalone.value) {
+        currentStep.value = 2;
+    } else if (currentStep.value < totalSteps) {
         currentStep.value++;
     }
 }

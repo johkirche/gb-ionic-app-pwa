@@ -95,16 +95,34 @@ function transformSong(directusSong: DirectusGesangbuchlied, index: number): Son
     const kategorien: Category[] =
         directusSong.kategorieId?.map((k) => ({
             name: k.kategorie_id.name,
-            index: k.kategorie_id.id,
+            index: String(k.kategorie_id.id),
         })) || [];
+
+    // Transform strophen from string[] to Strophe[]
+    const strophen = (directusSong.textId?.strophenEinzeln || []).map((text, idx) => ({
+        text,
+        strophe: String(idx + 1),
+    }));
+
+    // Transform abc_melodie string to MelodieAbc[]
+    const melodieAbc = directusSong.melodieId?.abc_melodie
+        ? [
+              {
+                  name: 'Standard',
+                  abc_notation: directusSong.melodieId.abc_melodie,
+                  is_default: true,
+                  file_id: '',
+              },
+          ]
+        : [];
 
     return {
         id: directusSong.id,
         index,
         titel: directusSong.titel,
-        strophen: directusSong.textId?.strophenEinzeln || [],
+        strophen,
         textAutoren,
-        melodieAbc: directusSong.melodieId?.abc_melodie || '',
+        melodieAbc,
         melodieAutoren,
         noten,
         kategorien,

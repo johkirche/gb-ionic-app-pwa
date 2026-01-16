@@ -6,11 +6,15 @@
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc && vite build",
+        "build:prod": "cross-env NODE_ENV=production vue-tsc && vite build",
         "preview": "vite preview",
         "test:e2e": "cypress run",
         "test:unit": "vitest",
         "lint": "eslint .",
-        "format": "prettier --write src/ --ignore-path dist/"
+        "format": "prettier --write src/ --ignore-path dist/",
+        "deploy": "pnpm run build:prod && wrangler pages deploy dist",
+        "deploy:staging": "cross-env NODE_ENV=staging pnpm run build && wrangler pages deploy dist --branch staging",
+        "wrangler:dev": "wrangler pages dev dist"
     },
     "dependencies": {
         "@capacitor/app": "8.0.0",
@@ -52,7 +56,9 @@
         "vite-plugin-vue-devtools": "^8.0.5",
         "vitest": "^4.0.16",
         "vue-eslint-parser": "^10.2.0",
-        "vue-tsc": "^3.2.1"
+        "vue-tsc": "^3.2.1",
+        "wrangler": "^4.0.0",
+        "cross-env": "^7.0.3"
     },
     "description": "An Ionic project"
 }
