@@ -19,12 +19,14 @@ export interface Category {
 }
 
 export interface Strophe {
-    text?: {
-        text: string;
-        strophe: string;
-        aenderungsvorschlag?: string | null;
-        anmerkung?: string | null;
-    } | string;
+    text?:
+        | {
+              text: string;
+              strophe: string;
+              aenderungsvorschlag?: string | null;
+              anmerkung?: string | null;
+          }
+        | string;
     strophe: string;
     aenderungsvorschlag?: string | null;
     anmerkung?: string | null;
