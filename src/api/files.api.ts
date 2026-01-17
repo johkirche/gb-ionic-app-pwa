@@ -11,15 +11,27 @@ import { directusConfig } from '@/services/directus';
  */
 
 // Get current token from user store
-function getCurrentToken(): string | null {
+async function getCurrentToken(): Promise<string | null> {
     const userStore = useUserStore();
-    return userStore.authData?.accessToken || null;
+
+    const token = userStore.authData?.accessToken || null;
+    if (!token) return null;
+
+    // Refresh if access token is expired/near-expiry (store includes a buffer)
+    if (userStore.isTokenExpired && userStore.authData?.refreshToken) {
+        const refreshed = await refreshAuthToken();
+        if (refreshed) {
+            return userStore.authData?.accessToken || null;
+        }
+    }
+
+    return token;
 }
 
 // Fetch a file (PNG/JPG/SVG) from Directus
 export async function fetchFile(fileId: string): Promise<Blob> {
     try {
-        const token = getCurrentToken();
+        const token = await getCurrentToken();
         const url = `${directusConfig.url}/assets/${fileId}`;
         const response = await fetch(url, {
             headers: {
@@ -33,7 +45,7 @@ export async function fetchFile(fileId: string): Promise<Blob> {
                 const refreshed = await refreshAuthToken();
                 if (refreshed) {
                     // Retry with new token
-                    const newToken = getCurrentToken();
+                    const newToken = await getCurrentToken();
                     const retryResponse = await fetch(url, {
                         headers: {
                             Authorization: newToken ? `Bearer ${newToken}` : '',

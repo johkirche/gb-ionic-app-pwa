@@ -68,11 +68,11 @@ interface DirectusResponse {
 
 // GraphQL query
 const SONGS_QUERY = `
-    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln { strophe anmerkung aenderungsvorschlag } autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie { name abc_notation is_default file_id } autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
+    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
 `;
 
 // Get current token from user store or env variable for debug mode
-function getCurrentToken(): string | null {
+async function getCurrentToken(): Promise<string | null> {
     const userStore = useUserStore();
 
     // If skipAuth is enabled (debug mode), use the environment variable token
@@ -80,7 +80,18 @@ function getCurrentToken(): string | null {
         return import.meta.env.VITE_AUTH_TOKEN || null;
     }
 
-    return userStore.authData?.accessToken || null;
+    const token = userStore.authData?.accessToken || null;
+    if (!token) return null;
+
+    // Refresh if access token is expired/near-expiry (store includes a buffer)
+    if (userStore.isTokenExpired && userStore.authData?.refreshToken) {
+        const refreshed = await refreshAuthToken();
+        if (refreshed) {
+            return userStore.authData?.accessToken || null;
+        }
+    }
+
+    return token;
 }
 
 // Transform nested Directus response to flat Song structure
@@ -138,7 +149,7 @@ function transformSong(directusSong: DirectusGesangbuchlied, index: number): Son
 // Fetch songs from Directus
 export async function fetchSongs(): Promise<Song[]> {
     try {
-        const token = getCurrentToken();
+        const token = await getCurrentToken();
         if (token) {
             await directusClient.setToken(token);
         }
@@ -151,7 +162,7 @@ export async function fetchSongs(): Promise<Song[]> {
         if (error instanceof Error && error.message.includes('401')) {
             const refreshed = await refreshAuthToken();
             if (refreshed) {
-                const newToken = getCurrentToken();
+                const newToken = await getCurrentToken();
                 if (newToken) {
                     await directusClient.setToken(newToken);
                 }

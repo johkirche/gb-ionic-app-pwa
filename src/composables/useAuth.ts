@@ -19,7 +19,12 @@ export async function refreshAuthToken(): Promise<boolean> {
             return false;
         }
 
-        const result = await directusClient.refresh();
+        debugger;
+
+        const result = await directusClient.refresh({
+            refresh_token: refreshToken,
+            mode: 'json',
+        });
 
         if (result.access_token && result.refresh_token) {
             const expiresAt = Date.now() + (result.expires || 900000);

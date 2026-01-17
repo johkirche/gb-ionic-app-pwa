@@ -32,6 +32,16 @@ http://ionicframework.com/docs/theming/ */
     --container-sm: 28rem; /* 448px - auth pages */
     --container-md: 36rem; /* 576px */
     --container-lg: 48rem; /* 768px - content pages */
+
+    /* Image icon filters (for raster icons like PNG) */
+    --icon-filter-adaptive: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* In dark mode, lightly invert monochrome raster icons for contrast */
+        --icon-filter-adaptive: invert(85%);
+    }
 }
 
 /* ============================================
@@ -251,6 +261,11 @@ ion-item.transparent {
     font-size: var(--font-size-4xl);
     color: var(--ion-color-primary);
     margin-bottom: var(--spacing-md);
+}
+
+/* Utility: apply adaptive filter to raster icons */
+.icon-filter-adaptive {
+    filter: var(--icon-filter-adaptive);
 }
 
 /* ============================================

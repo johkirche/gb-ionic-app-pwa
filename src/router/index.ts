@@ -100,6 +100,18 @@ router.beforeEach(async (to, from, next) => {
         return;
     }
 
+    // If onboarding is in progress, keep the user on onboarding instead of landing on Home
+    // (e.g. when the PWA is installed and launched fresh)
+    try {
+        const onboardingInProgress = localStorage.getItem('onboarding.inProgress') === '1';
+        if (onboardingInProgress && userStore.isLoggedIn && to.name === 'Home') {
+            next({ name: 'Onboarding' });
+            return;
+        }
+    } catch {
+        // ignore storage errors
+    }
+
     // Allow navigation
     next();
 });

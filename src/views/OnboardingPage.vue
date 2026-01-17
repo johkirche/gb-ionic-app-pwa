@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import { IonContent, IonPage } from '@ionic/vue';
 import { storeToRefs } from 'pinia';
@@ -40,6 +40,9 @@ import StepIndicator from '@/components/utils/StepIndicator.vue';
 const router = useRouter();
 const songsStore = useSongsStore();
 const { isSyncing, error: syncError, syncProgress } = storeToRefs(songsStore);
+
+const ONBOARDING_IN_PROGRESS_KEY = 'onboarding.inProgress';
+const ONBOARDING_STEP_KEY = 'onboarding.currentStep';
 
 // Step management
 const currentStep = ref(1);
@@ -65,12 +68,33 @@ async function handleDownload() {
 }
 
 function finishOnboarding() {
+    localStorage.removeItem(ONBOARDING_IN_PROGRESS_KEY);
+    localStorage.removeItem(ONBOARDING_STEP_KEY);
     router.push('/home');
 }
 
 function skipOnboarding() {
+    localStorage.removeItem(ONBOARDING_IN_PROGRESS_KEY);
+    localStorage.removeItem(ONBOARDING_STEP_KEY);
     router.push('/home');
 }
+
+onMounted(() => {
+    localStorage.setItem(ONBOARDING_IN_PROGRESS_KEY, '1');
+
+    const storedStep = Number(localStorage.getItem(ONBOARDING_STEP_KEY));
+    if (!Number.isNaN(storedStep) && storedStep >= 1 && storedStep <= totalSteps) {
+        currentStep.value = storedStep;
+    }
+});
+
+watch(
+    currentStep,
+    (step) => {
+        localStorage.setItem(ONBOARDING_STEP_KEY, String(step));
+    },
+    { immediate: true },
+);
 </script>
 
 <style scoped>
