@@ -10,8 +10,9 @@ import { onMounted } from 'vue';
 
 import { IonApp, IonRouterOutlet } from '@ionic/vue';
 
-import PWAInstallBanner from '@/components/PWAInstallBanner.vue';
 import { usePWA } from '@/composables/usePWA';
+
+import PWAInstallBanner from '@/components/PWAInstallBanner.vue';
 
 // Initialize PWA listeners at the app level
 const { initPWAListeners } = usePWA();
