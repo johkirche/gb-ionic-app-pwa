@@ -1,6 +1,0 @@
-onlyBuiltDependencies:
-  - core-js
-  - cypress
-  - esbuild
-  - sharp
-  - workerd

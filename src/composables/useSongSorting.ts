@@ -39,6 +39,7 @@ export const SORT_OPTIONS: SortOption[] = [
 // Minimum number of songs for a category to be shown separately
 // Categories with fewer songs will be merged into "Sonstige"
 const MIN_CATEGORY_ENTRIES = 0;
+const NUMBER_SCROLL_GROUP_SIZE = 15; // Number of songs per index group for number sorting
 
 export interface SongSection {
     key: string;
@@ -118,7 +119,8 @@ function groupByIndex(songs: Song[]): SongSection[] {
 
     for (const song of sorted) {
         // Calculate tenner group: 0 for 1-9, 10 for 10-19, etc.
-        const tenner = Math.floor((song.index - 1) / 10) * 10;
+        const tenner =
+            Math.floor((song.index - 1) / NUMBER_SCROLL_GROUP_SIZE) * NUMBER_SCROLL_GROUP_SIZE;
         const key = tenner === 0 ? 1 : tenner;
 
         if (!groups.has(key)) {

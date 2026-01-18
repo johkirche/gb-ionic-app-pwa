@@ -1,0 +1,458 @@
+<template>
+    <ion-page>
+        <ion-content :fullscreen="true">
+            <!-- Page Header -->
+            <div class="page-header">
+                <ion-button fill="clear" class="back-button" @click="$router.back()">
+                    <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
+                </ion-button>
+                <h1 class="page-title">Einstellungen</h1>
+            </div>
+
+            <div class="content-container card-stack">
+                <!-- Account Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title>Konto</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <ion-list class="transparent">
+                            <ion-item class="transparent">
+                                <ion-icon :icon="personOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>E-Mail</h3>
+                                    <p>{{ user?.email || 'Nicht angemeldet' }}</p>
+                                </ion-label>
+                            </ion-item>
+
+                            <ion-item class="transparent" button @click="openEditNameModal">
+                                <ion-icon :icon="createOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Name</h3>
+                                    <p>{{ displayName }}</p>
+                                </ion-label>
+                                <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
+                            </ion-item>
+
+                            <ion-item
+                                v-if="isLoggedIn"
+                                class="transparent"
+                                button
+                                @click="handleLogout"
+                            >
+                                <ion-icon
+                                    :icon="logOutOutline"
+                                    slot="start"
+                                    color="medium"
+                                ></ion-icon>
+                                <ion-label color="medium">
+                                    <h3>Abmelden</h3>
+                                </ion-label>
+                            </ion-item>
+                        </ion-list>
+                    </ion-card-content>
+                </ion-card>
+
+                <!-- Appearance Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title>Darstellung</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <ion-list class="transparent">
+                            <ion-item class="transparent">
+                                <ion-icon :icon="contrastOutline" slot="start"></ion-icon>
+                                <ion-label>Farbschema</ion-label>
+                                <ion-select
+                                    v-model="themeMode"
+                                    interface="popover"
+                                    @ionChange="onThemeChange"
+                                >
+                                    <ion-select-option value="system">System</ion-select-option>
+                                    <ion-select-option value="light">Hell</ion-select-option>
+                                    <ion-select-option value="dark">Dunkel</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+
+                            <ion-item class="transparent">
+                                <ion-icon :icon="textOutline" slot="start"></ion-icon>
+                                <ion-label>Textgröße (Lieder)</ion-label>
+                                <ion-select
+                                    v-model="songFontSize"
+                                    interface="popover"
+                                    @ionChange="onFontSizeChange"
+                                >
+                                    <ion-select-option value="small">Klein</ion-select-option>
+                                    <ion-select-option value="medium">Normal</ion-select-option>
+                                    <ion-select-option value="large">Groß</ion-select-option>
+                                    <ion-select-option value="xlarge">Sehr groß</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+                        </ion-list>
+                    </ion-card-content>
+                </ion-card>
+
+                <!-- Data Management Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title>Daten</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <ion-list class="transparent">
+                            <ion-item class="transparent" button @click="navigateToDownload">
+                                <ion-icon :icon="cloudDownloadOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Heruntergeladene Inhalte</h3>
+                                    <p>{{ songsCount }} Lieder, {{ filesCount }} Dateien</p>
+                                </ion-label>
+                                <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
+                            </ion-item>
+
+                            <ion-item class="transparent" button @click="handleClearCache">
+                                <ion-icon
+                                    :icon="trashBinOutline"
+                                    slot="start"
+                                    color="warning"
+                                ></ion-icon>
+                                <ion-label color="warning">
+                                    <h3>Cache leeren</h3>
+                                    <p>Temporäre Daten löschen</p>
+                                </ion-label>
+                            </ion-item>
+                        </ion-list>
+                    </ion-card-content>
+                </ion-card>
+
+                <!-- Danger Zone Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title color="danger">Gefahrenbereich</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <p class="settings-description">
+                            Diese Aktionen können nicht rückgängig gemacht werden.
+                        </p>
+                        <ion-button
+                            expand="block"
+                            color="danger"
+                            fill="outline"
+                            @click="handleDeleteAccount"
+                        >
+                            <ion-icon slot="start" :icon="trashOutline"></ion-icon>
+                            Konto löschen
+                        </ion-button>
+                    </ion-card-content>
+                </ion-card>
+
+                <!-- About Card -->
+                <ion-card>
+                    <ion-card-header>
+                        <ion-card-title>Über die App</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                        <ion-list class="transparent">
+                            <ion-item class="transparent">
+                                <ion-icon :icon="informationCircleOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Version</h3>
+                                    <p>{{ appVersion }}</p>
+                                </ion-label>
+                            </ion-item>
+
+                            <ion-item
+                                class="transparent"
+                                button
+                                href="mailto:support@johannische-kirche.org"
+                            >
+                                <ion-icon :icon="mailOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Kontakt & Hilfe</h3>
+                                    <p>support@johannische-kirche.org</p>
+                                </ion-label>
+                                <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
+                            </ion-item>
+
+                            <ion-item class="transparent" button @click="openPrivacyPolicy">
+                                <ion-icon :icon="shieldCheckmarkOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Datenschutz</h3>
+                                </ion-label>
+                                <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
+                            </ion-item>
+                        </ion-list>
+                    </ion-card-content>
+                </ion-card>
+            </div>
+        </ion-content>
+    </ion-page>
+</template>
+
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+
+import {
+    IonButton,
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardTitle,
+    IonContent,
+    IonIcon,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonPage,
+    IonSelect,
+    IonSelectOption,
+    alertController,
+    toastController,
+} from '@ionic/vue';
+import {
+    arrowBackOutline,
+    chevronForwardOutline,
+    cloudDownloadOutline,
+    contrastOutline,
+    createOutline,
+    informationCircleOutline,
+    logOutOutline,
+    mailOutline,
+    personOutline,
+    shieldCheckmarkOutline,
+    textOutline,
+    trashBinOutline,
+    trashOutline,
+} from 'ionicons/icons';
+import { useRouter } from 'vue-router';
+
+import { useSongsStore } from '@/stores/songs';
+
+import { useAuth } from '@/composables/useAuth';
+
+const router = useRouter();
+const { user, logout, isLoggedIn } = useAuth();
+const songsStore = useSongsStore();
+
+// App version - could be pulled from package.json in a real setup
+const appVersion = ref('1.0.0');
+
+// Appearance settings
+const themeMode = ref<'system' | 'light' | 'dark'>('system');
+const songFontSize = ref<'small' | 'medium' | 'large' | 'xlarge'>('medium');
+
+// Data counts
+const songsCount = computed(() => songsStore.songs.length);
+const filesCount = ref(0);
+
+// Computed
+const displayName = computed(() => {
+    if (user.value?.firstName || user.value?.lastName) {
+        return [user.value.firstName, user.value.lastName].filter(Boolean).join(' ');
+    }
+    return 'Nicht angegeben';
+});
+
+// Load settings on mount
+onMounted(async () => {
+    await loadSettings();
+    await updateFilesCount();
+});
+
+async function loadSettings() {
+    // Load theme preference
+    const savedTheme = localStorage.getItem('settings.theme');
+    if (savedTheme && ['system', 'light', 'dark'].includes(savedTheme)) {
+        themeMode.value = savedTheme as 'system' | 'light' | 'dark';
+    }
+
+    // Load font size preference
+    const savedFontSize = localStorage.getItem('settings.songFontSize');
+    if (savedFontSize && ['small', 'medium', 'large', 'xlarge'].includes(savedFontSize)) {
+        songFontSize.value = savedFontSize as 'small' | 'medium' | 'large' | 'xlarge';
+    }
+
+    // Apply theme
+    applyTheme(themeMode.value);
+}
+
+async function updateFilesCount() {
+    filesCount.value = await songsStore.getStoredFilesCount();
+}
+
+function onThemeChange() {
+    localStorage.setItem('settings.theme', themeMode.value);
+    applyTheme(themeMode.value);
+}
+
+function applyTheme(theme: 'system' | 'light' | 'dark') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (theme === 'dark' || (theme === 'system' && prefersDark)) {
+        document.documentElement.classList.add('ion-palette-dark');
+    } else {
+        document.documentElement.classList.remove('ion-palette-dark');
+    }
+}
+
+function onFontSizeChange() {
+    localStorage.setItem('settings.songFontSize', songFontSize.value);
+}
+
+function navigateToDownload() {
+    router.push('/download');
+}
+
+async function openEditNameModal() {
+    const alert = await alertController.create({
+        header: 'Name ändern',
+        inputs: [
+            {
+                name: 'firstName',
+                type: 'text',
+                placeholder: 'Vorname',
+                value: user.value?.firstName || '',
+            },
+            {
+                name: 'lastName',
+                type: 'text',
+                placeholder: 'Nachname',
+                value: user.value?.lastName || '',
+            },
+        ],
+        buttons: [
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+            },
+            {
+                text: 'Speichern',
+                handler: async (data) => {
+                    await updateUserName(data.firstName, data.lastName);
+                },
+            },
+        ],
+    });
+    await alert.present();
+}
+
+async function updateUserName(firstName: string, lastName: string) {
+    try {
+        // TODO: Implement API call to update user name on server
+        // For now, show a toast that the feature is coming
+        const toast = await toastController.create({
+            message: 'Name-Änderung wird in einer zukünftigen Version verfügbar sein.',
+            duration: 3000,
+            position: 'bottom',
+            color: 'warning',
+        });
+        await toast.present();
+    } catch (error) {
+        console.error('Error updating name:', error);
+    }
+}
+
+async function handleLogout() {
+    const alert = await alertController.create({
+        header: 'Abmelden',
+        message: 'Möchten Sie sich wirklich abmelden?',
+        buttons: [
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+            },
+            {
+                text: 'Abmelden',
+                handler: async () => {
+                    await logout();
+                    router.push('/login');
+                },
+            },
+        ],
+    });
+    await alert.present();
+}
+
+async function handleClearCache() {
+    const alert = await alertController.create({
+        header: 'Cache leeren',
+        message:
+            'Möchten Sie den Cache leeren? Dies betrifft nur temporäre Daten, nicht Ihre heruntergeladenen Lieder.',
+        buttons: [
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+            },
+            {
+                text: 'Cache leeren',
+                handler: async () => {
+                    try {
+                        // Clear any cached data (e.g., service worker cache)
+                        if ('caches' in window) {
+                            const cacheNames = await caches.keys();
+                            await Promise.all(cacheNames.map((name) => caches.delete(name)));
+                        }
+
+                        const toast = await toastController.create({
+                            message: 'Cache wurde geleert.',
+                            duration: 2000,
+                            position: 'bottom',
+                            color: 'success',
+                        });
+                        await toast.present();
+                    } catch (error) {
+                        console.error('Error clearing cache:', error);
+                    }
+                },
+            },
+        ],
+    });
+    await alert.present();
+}
+
+async function handleDeleteAccount() {
+    const alert = await alertController.create({
+        header: 'Konto löschen',
+        message:
+            'Sind Sie sicher, dass Sie Ihr Konto unwiderruflich löschen möchten? Alle Ihre Daten werden gelöscht.',
+        buttons: [
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+            },
+            {
+                text: 'Konto löschen',
+                role: 'destructive',
+                handler: async () => {
+                    try {
+                        // TODO: Implement API call to delete account on server
+                        const toast = await toastController.create({
+                            message:
+                                'Kontolöschung wird in einer zukünftigen Version verfügbar sein. Bitte kontaktieren Sie den Support.',
+                            duration: 4000,
+                            position: 'bottom',
+                            color: 'warning',
+                        });
+                        await toast.present();
+                    } catch (error) {
+                        console.error('Error deleting account:', error);
+                    }
+                },
+            },
+        ],
+    });
+    await alert.present();
+}
+
+function openPrivacyPolicy() {
+    // Open privacy policy - could be an external link or internal page
+    window.open('https://johannische-kirche.org/datenschutz', '_blank');
+}
+</script>
+
+<style scoped>
+.settings-description {
+    color: var(--ion-color-medium);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+</style>

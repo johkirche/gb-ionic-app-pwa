@@ -9,6 +9,7 @@ import LoginPage from '../views/LoginPage.vue';
 import OnboardingPage from '../views/OnboardingPage.vue';
 import PasswordResetPage from '../views/PasswordResetPage.vue';
 import RegisterPage from '../views/RegisterPage.vue';
+import SettingsPage from '../views/SettingsPage.vue';
 import SongPage from '../views/SongPage.vue';
 import SongsListPage from '../views/SongsListPage.vue';
 
@@ -63,6 +64,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/download',
         name: 'Download',
         component: DownloadPage,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/settings',
+        name: 'Settings',
+        component: SettingsPage,
         meta: { requiresAuth: true },
     },
 ];

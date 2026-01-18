@@ -1,15 +1,14 @@
 <template>
     <ion-page>
         <ion-content :fullscreen="true">
-            <!-- Logout button in top right -->
+            <!-- Settings button in top right -->
             <ion-button
-                v-if="isLoggedIn"
                 fill="clear"
                 class="floating-button floating-button--top-right"
                 style="--color: var(--ion-color-medium)"
-                @click="handleLogout"
+                @click="navigateToSettings"
             >
-                <ion-icon slot="icon-only" :icon="logOutOutline"></ion-icon>
+                <ion-icon slot="icon-only" :icon="settingsOutline"></ion-icon>
             </ion-button>
 
             <div class="centered-container">
@@ -31,11 +30,6 @@
                         <ion-icon slot="start" :icon="listOutline"></ion-icon>
                         Lieder anzeigen
                     </ion-button>
-
-                    <ion-button expand="block" fill="outline" @click="navigateToDownload">
-                        <ion-icon slot="start" :icon="downloadOutline"></ion-icon>
-                        Daten synchronisieren
-                    </ion-button>
                 </div>
             </div>
         </ion-content>
@@ -44,7 +38,7 @@
 
 <script setup lang="ts">
 import { IonButton, IonContent, IonIcon, IonImg, IonPage, IonSpinner } from '@ionic/vue';
-import { downloadOutline, listOutline, logOutOutline } from 'ionicons/icons';
+import { downloadOutline, listOutline, settingsOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
@@ -52,7 +46,7 @@ import { useSongsStore } from '@/stores/songs';
 import { useAuth } from '@/composables/useAuth';
 
 const router = useRouter();
-const { user, logout, isLoading, isLoggedIn } = useAuth();
+const { user, isLoading } = useAuth();
 const songsStore = useSongsStore();
 
 function navigateToSongs() {
@@ -69,9 +63,8 @@ function navigateToDownload() {
     router.push('/download');
 }
 
-async function handleLogout() {
-    await logout();
-    router.push('/login');
+function navigateToSettings() {
+    router.push('/settings');
 }
 </script>
 
