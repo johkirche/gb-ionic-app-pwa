@@ -213,7 +213,7 @@ import { useRoute } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
 
-import AbcRenderer from '@/components/AbcRenderer.vue';
+import AbcRenderer from '@/components/songview/AbcRenderer.vue';
 
 import type { Autor, Song } from '@/db';
 

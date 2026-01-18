@@ -177,10 +177,10 @@ import { useSongsStore } from '@/stores/songs';
 import { useSongFiltering } from '@/composables/useSongFiltering';
 import { SORT_OPTIONS, useSongSorting } from '@/composables/useSongSorting';
 
-import IndexScroll from '@/components/IndexScroll.vue';
-import SongFilterDrawer from '@/components/SongFilterDrawer.vue';
-import SongSectionHeader from '@/components/SongSectionHeader.vue';
-import SongToolbar from '@/components/SongToolbar.vue';
+import IndexScroll from '@/components/songlist/IndexScroll.vue';
+import SongFilterDrawer from '@/components/songlist/SongFilterDrawer.vue';
+import SongSectionHeader from '@/components/songlist/SongSectionHeader.vue';
+import SongToolbar from '@/components/songlist/SongToolbar.vue';
 
 import type { Autor, Category } from '@/db';
 
