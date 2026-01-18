@@ -76,12 +76,23 @@ export interface UserData {
     skipAuth: boolean; // Dev flag to skip auth checks
 }
 
+// Playlist types
+export interface Playlist {
+    id: string;
+    name: string;
+    emoji: string;
+    songIds: string[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 // Dexie database class
 export class GesangbuchDatabase extends Dexie {
     songs!: Table<Song, string>;
     files!: Table<{ id: string; blob: Blob; filename: string }, string>;
     auth!: Table<AuthData, string>;
     users!: Table<UserData, string>;
+    playlists!: Table<Playlist, string>;
 
     constructor() {
         super('GesangbuchDB');
@@ -97,6 +108,15 @@ export class GesangbuchDatabase extends Dexie {
             files: 'id, filename',
             auth: 'id',
             users: 'id, email, role',
+        });
+
+        // Version 3: Add playlists table
+        this.version(3).stores({
+            songs: 'id, titel',
+            files: 'id, filename',
+            auth: 'id',
+            users: 'id, email, role',
+            playlists: 'id, name, createdAt',
         });
     }
 }

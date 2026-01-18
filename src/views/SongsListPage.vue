@@ -106,6 +106,8 @@
                         detail
                         :data-section="section.key"
                         @click="navigateToSong(song.id)"
+                        @contextmenu.prevent="openSongActions(song.id)"
+                        v-long-press="() => openSongActions(song.id)"
                     >
                         <ion-label class="ion-padding-horizontal">
                             <h2>
@@ -141,6 +143,22 @@
             :active-key="activeSection"
             @select="scrollToSection"
         />
+
+        <!-- Song Action Sheet (long-press menu) -->
+        <ion-action-sheet
+            :is-open="showSongActions"
+            header="Aktionen"
+            :buttons="songActionButtons"
+            @didDismiss="closeSongActions"
+        />
+
+        <!-- Playlist Select Modal -->
+        <PlaylistSelectModal
+            :is-open="showPlaylistModal"
+            :song-id="selectedSongId"
+            @close="showPlaylistModal = false"
+            @added="onSongAddedToPlaylist"
+        />
     </ion-page>
 </template>
 
@@ -166,6 +184,7 @@ import {
 import {
     checkmarkOutline,
     downloadOutline,
+    listOutline,
     musicalNotesOutline,
     searchOutline,
 } from 'ionicons/icons';
@@ -177,6 +196,7 @@ import { useSongsStore } from '@/stores/songs';
 import { useSongFiltering } from '@/composables/useSongFiltering';
 import { SORT_OPTIONS, useSongSorting } from '@/composables/useSongSorting';
 
+import PlaylistSelectModal from '@/components/playlist/PlaylistSelectModal.vue';
 import IndexScroll from '@/components/songlist/IndexScroll.vue';
 import SongFilterDrawer from '@/components/songlist/SongFilterDrawer.vue';
 import SongSectionHeader from '@/components/songlist/SongSectionHeader.vue';
@@ -219,6 +239,11 @@ const showSortOptions = ref(false);
 const showFilterDrawer = ref(false);
 const activeSection = ref<string>('');
 
+// Long-press / Song Actions State
+const showSongActions = ref(false);
+const showPlaylistModal = ref(false);
+const selectedSongId = ref<string>('');
+
 // Open filter drawer
 function openFilters() {
     showFilterDrawer.value = true;
@@ -251,6 +276,35 @@ const sortActionButtons = computed(() => [
         role: 'cancel' as const,
     },
 ]);
+
+// Song action sheet buttons
+const songActionButtons = computed(() => [
+    {
+        text: 'Zu Playlist hinzufügen',
+        icon: listOutline,
+        handler: () => {
+            showPlaylistModal.value = true;
+        },
+    },
+    {
+        text: 'Abbrechen',
+        role: 'cancel' as const,
+    },
+]);
+
+// Long-press handler
+function openSongActions(songId: string) {
+    selectedSongId.value = songId;
+    showSongActions.value = true;
+}
+
+function closeSongActions() {
+    showSongActions.value = false;
+}
+
+function onSongAddedToPlaylist(_playlistId: string) {
+    // Could show a toast notification here
+}
 
 // Scroll to a specific section - always scroll to first item in section
 async function scrollToSection(sectionKey: string) {

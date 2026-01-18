@@ -30,6 +30,10 @@
                         <ion-icon slot="start" :icon="listOutline"></ion-icon>
                         Lieder anzeigen
                     </ion-button>
+                    <ion-button expand="block" color="secondary" @click="navigateToPlaylists">
+                        <ion-icon slot="start" :icon="albumsOutline"></ion-icon>
+                        Playlisten
+                    </ion-button>
                 </div>
             </div>
         </ion-content>
@@ -38,7 +42,7 @@
 
 <script setup lang="ts">
 import { IonButton, IonContent, IonIcon, IonImg, IonPage, IonSpinner } from '@ionic/vue';
-import { downloadOutline, listOutline, settingsOutline } from 'ionicons/icons';
+import { albumsOutline, downloadOutline, listOutline, settingsOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
@@ -61,6 +65,10 @@ function navigateToSongs() {
 
 function navigateToDownload() {
     router.push('/download');
+}
+
+function navigateToPlaylists() {
+    router.push('/playlists');
 }
 
 function navigateToSettings() {

@@ -336,6 +336,8 @@ function formatAuthors(authors: Autor[]): string {
 // Format verse text (preserve line breaks)
 function formatVerse(text: string | null | undefined): string {
     if (typeof text !== 'string') return '';
+    // remove ¬ from text
+    text = text.replace(/¬/g, '');
     return text.replace(/\n/g, '<br>');
 }
 </script>

@@ -27,6 +27,7 @@ import '@ionic/vue/css/typography.css';
 import { createPinia } from 'pinia';
 
 import App from './App.vue';
+import { longPressDirective } from './directives/longPress';
 import router from './router';
 /* Theme variables */
 import './theme/variables.css';
@@ -34,6 +35,9 @@ import './theme/variables.css';
 const pinia = createPinia();
 
 const app = createApp(App).use(IonicVue).use(pinia).use(router);
+
+// Register custom directives
+app.directive('long-press', longPressDirective);
 
 router.isReady().then(() => {
     app.mount('#app');
