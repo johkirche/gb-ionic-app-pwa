@@ -408,7 +408,7 @@ function formatVerse(text: string | null | undefined): string {
 .melody-section {
     background: var(--ion-color-light);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
     overflow-x: auto;
 }
@@ -422,6 +422,8 @@ function formatVerse(text: string | null | undefined): string {
     padding-top: var(--spacing-md);
     border-top: 1px solid var(--ion-color-medium-tint);
     margin-top: var(--spacing-md);
+    margin-left: calc(var(--spacing-sm) * -1);
+    margin-right: calc(var(--spacing-sm) * -1);
 }
 
 .tempo-control {
@@ -490,7 +492,7 @@ function formatVerse(text: string | null | undefined): string {
 
 .author-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing-sm);
     color: var(--ion-color-medium);
@@ -505,6 +507,7 @@ function formatVerse(text: string | null | undefined): string {
 .author-info {
     display: flex;
     flex-wrap: wrap;
+    padding-top: 4px;
     gap: var(--spacing-xs);
 }
 

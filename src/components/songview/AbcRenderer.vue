@@ -43,11 +43,13 @@ const containerRef = ref<HTMLElement | null>(null);
 const notationRef = ref<HTMLElement | null>(null);
 const renderError = ref<string | null>(null);
 
-// ABCJS instances
+// ABCJS instances - using lower-level CreateSynth + TimingCallbacks for proper pause/resume
 let abcjs: typeof ABCJS | null = null;
-let synthControl: ABCJS.SynthObjectController | null = null;
+let createSynth: any = null; // ABCJS.synth.CreateSynth instance
+let timingCallbacks: any = null; // ABCJS.TimingCallbacks instance
 let visualObj: ABCJS.TuneObject[] | null = null;
-let isAudioLoaded = false;
+let isAudioPrimed = false;
+let isPaused = false;
 
 // Load and initialize abcjs
 async function initAbcjs() {
@@ -119,116 +121,125 @@ function renderNotation() {
     }
 }
 
-// Start playback
+// Start playback - using CreateSynth + TimingCallbacks for proper pause/resume
 async function startPlayback() {
-    console.log('Starting playback');
+    console.log('[ABC Debug] startPlayback called', {
+        hasAbcjs: !!abcjs,
+        hasVisualObj: !!visualObj,
+        hasNotationRef: !!notationRef.value,
+        isAudioPrimed,
+        isPaused,
+    });
+
     if (!abcjs || !visualObj || visualObj.length === 0 || !notationRef.value) {
+        console.log('[ABC Debug] startPlayback early return - missing dependencies');
         return;
     }
 
     try {
-        // Initialize audio context on user interaction
-        if (!synthControl) {
-            // Create synth control with cursor control
-            synthControl = new abcjs.synth.SynthController();
-
-            // Check if audio is supported
-            if (abcjs.synth.supportsAudio()) {
-                // Create cursor control object for note highlighting
-                const cursorControl = {
-                    onStart: () => {
-                        // Create SVG cursor line element
-                        const svg = notationRef.value?.querySelector('svg');
-                        if (svg) {
-                            const cursor = document.createElementNS(
-                                'http://www.w3.org/2000/svg',
-                                'line',
-                            );
-                            cursor.setAttribute('class', 'abcjs-cursor');
-                            cursor.setAttributeNS(null, 'x1', '0');
-                            cursor.setAttributeNS(null, 'y1', '0');
-                            cursor.setAttributeNS(null, 'x2', '0');
-                            cursor.setAttributeNS(null, 'y2', '0');
-                            svg.appendChild(cursor);
-                        }
-                        emit('playStarted');
-                    },
-                    onFinished: () => {
-                        // Remove highlighting and reset cursor
-                        const highlighted =
-                            notationRef.value?.querySelectorAll('.abcjs-note_selected');
-                        highlighted?.forEach((el: Element) => {
-                            el.classList.remove('abcjs-note_selected');
-                        });
-
-                        const cursor = notationRef.value?.querySelector('.abcjs-cursor');
-                        if (cursor) {
-                            cursor.setAttributeNS(null, 'x1', '0');
-                            cursor.setAttributeNS(null, 'x2', '0');
-                            cursor.setAttributeNS(null, 'y1', '0');
-                            cursor.setAttributeNS(null, 'y2', '0');
-                        }
-                        emit('playStopped');
-                    },
-                    onBeat: (beatNumber: number, totalBeats: number, totalTime: number) => {
-                        // Called on each beat - can be used for metronome
-                    },
-                    onEvent: (event: any) => {
-                        // Skip tie events across measure lines
-                        if (event.measureStart && event.left === null) {
-                            return;
-                        }
-
-                        // Remove previous highlighting
-                        const lastSelection =
-                            notationRef.value?.querySelectorAll('.abcjs-note_selected');
-                        lastSelection?.forEach((el: Element) => {
-                            el.classList.remove('abcjs-note_selected');
-                        });
-
-                        // Add highlighting to current elements
-                        // event.elements is an array of notes, each note is an array of SVG elements
-                        if (event.elements) {
-                            for (let i = 0; i < event.elements.length; i++) {
-                                const note = event.elements[i];
-                                for (let j = 0; j < note.length; j++) {
-                                    if (note[j] && note[j].classList) {
-                                        note[j].classList.add('abcjs-note_selected');
-                                    }
-                                }
-                            }
-                        }
-
-                        // Update cursor position
-                        const cursor = notationRef.value?.querySelector('.abcjs-cursor');
-                        if (cursor && event.left != null) {
-                            cursor.setAttributeNS(null, 'x1', String(event.left - 2));
-                            cursor.setAttributeNS(null, 'x2', String(event.left - 2));
-                            cursor.setAttributeNS(null, 'y1', String(event.top));
-                            cursor.setAttributeNS(null, 'y2', String(event.top + event.height));
-                        }
-                    },
-                };
-
-                await synthControl.load('#audio-control', cursorControl, {
-                    displayLoop: false,
-                    displayRestart: false,
-                    displayPlay: false,
-                    displayProgress: true,
-                    displayWarp: false,
-                });
-            }
+        // If we're resuming from a paused state
+        if (isPaused && createSynth && timingCallbacks) {
+            console.log('[ABC Debug] Resuming from paused state');
+            await createSynth.resume();
+            timingCallbacks.start();
+            isPaused = false;
+            emit('playStarted');
+            return;
         }
 
-        // Set up the tune with tempo
-        await synthControl.setTune(visualObj[0], false, {
-            qpm: props.tempo || 120,
+        // Create new synth instance
+        createSynth = new abcjs.synth.CreateSynth();
+
+        // Calculate milliseconds per measure from tempo
+        const qpm = props.tempo || 120;
+
+        // Get the meter from the visualObj to calculate millisecondsPerMeasure
+        // Default to 4/4 if not specified (beatLength of 0.25 = quarter note)
+        const beatLength = visualObj[0].getBeatLength() || 0.25;
+        const beatsPerMeasure = 1 / beatLength; // e.g., 4 for 4/4 time
+        const millisecondsPerMeasure = (60000 / qpm) * beatsPerMeasure;
+
+        // Initialize the synth with the visual object
+        await createSynth.init({
+            visualObj: visualObj[0],
+            millisecondsPerMeasure: millisecondsPerMeasure,
         });
 
-        isAudioLoaded = true;
+        console.log('[ABC Debug] Synth initialized, priming audio buffer');
 
-        // Start playback
-        await synthControl.play();
+        // Prime the audio buffer
+        const primeResult = await createSynth.prime();
+        console.log('[ABC Debug] Prime result:', primeResult);
+        isAudioPrimed = true;
+
+        // Create timing callbacks for cursor/highlighting
+        timingCallbacks = new abcjs.TimingCallbacks(visualObj[0], {
+            qpm: qpm,
+            beatCallback: (beatNumber: number, totalBeats: number, totalTime: number) => {
+                // Called on each beat
+            },
+            eventCallback: (event: any): any => {
+                if (!event) {
+                    // End of tune
+                    console.log('[ABC Debug] End of tune reached');
+                    stopPlayback();
+                    return;
+                }
+
+                // Skip tie events across measure lines
+                if (event.measureStart && event.left === null) {
+                    return;
+                }
+
+                // Remove previous highlighting
+                const lastSelection = notationRef.value?.querySelectorAll('.abcjs-note_selected');
+                lastSelection?.forEach((el: Element) => {
+                    el.classList.remove('abcjs-note_selected');
+                });
+
+                // Add highlighting to current elements
+                if (event.elements) {
+                    for (let i = 0; i < event.elements.length; i++) {
+                        const note = event.elements[i];
+                        for (let j = 0; j < note.length; j++) {
+                            if (note[j] && note[j].classList) {
+                                note[j].classList.add('abcjs-note_selected');
+                            }
+                        }
+                    }
+                }
+
+                // Update cursor position
+                const cursor = notationRef.value?.querySelector('.abcjs-cursor');
+                if (cursor && event.left != null) {
+                    cursor.setAttributeNS(null, 'x1', String(event.left - 2));
+                    cursor.setAttributeNS(null, 'x2', String(event.left - 2));
+                    cursor.setAttributeNS(null, 'y1', String(event.top));
+                    cursor.setAttributeNS(null, 'y2', String(event.top + event.height));
+                }
+            },
+        });
+
+        // Create cursor element
+        const svg = notationRef.value?.querySelector('svg');
+        if (svg && !svg.querySelector('.abcjs-cursor')) {
+            const cursor = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            cursor.setAttribute('class', 'abcjs-cursor');
+            cursor.setAttributeNS(null, 'x1', '0');
+            cursor.setAttributeNS(null, 'y1', '0');
+            cursor.setAttributeNS(null, 'x2', '0');
+            cursor.setAttributeNS(null, 'y2', '0');
+            svg.appendChild(cursor);
+        }
+
+        // Start both audio and timing callbacks together
+        console.log('[ABC Debug] Starting audio and timing callbacks');
+        await createSynth.start();
+        timingCallbacks.start();
+        isPaused = false;
+
+        emit('playStarted');
+        console.log('[ABC Debug] Playback started successfully');
     } catch (error) {
         console.error('Playback error:', error);
         renderError.value = 'Wiedergabe fehlgeschlagen';
@@ -238,78 +249,106 @@ async function startPlayback() {
 
 // Pause playback
 function pausePlayback() {
-    console.log('Pausing playback');
-    if (synthControl) {
-        synthControl.pause();
+    console.log('[ABC Debug] pausePlayback called', {
+        hasCreateSynth: !!createSynth,
+        hasTimingCallbacks: !!timingCallbacks,
+    });
+
+    if (createSynth && timingCallbacks) {
+        createSynth.pause();
+        timingCallbacks.pause();
+        isPaused = true;
+        console.log('[ABC Debug] Playback paused');
     }
-    emit('playStopped');
 }
 
 // Resume playback
 async function resumePlayback() {
-    console.log('Resuming playback');
-    if (synthControl) {
-        try {
-            await synthControl.play();
-            emit('playStarted');
-        } catch (error) {
-            console.error('Resume error:', error);
-            emit('playStopped');
-        }
+    console.log('[ABC Debug] resumePlayback called', {
+        hasCreateSynth: !!createSynth,
+        hasTimingCallbacks: !!timingCallbacks,
+        isPaused,
+    });
+
+    if (!createSynth || !timingCallbacks) {
+        console.log('[ABC Debug] No synth/callbacks, starting fresh');
+        await startPlayback();
+        return;
+    }
+
+    try {
+        console.log('[ABC Debug] Resuming audio and timing callbacks');
+        await createSynth.resume();
+        timingCallbacks.start();
+        isPaused = false;
+        emit('playStarted');
+        console.log('[ABC Debug] Playback resumed successfully');
+    } catch (error) {
+        console.error('[ABC Debug] Resume error:', error);
+        // If resume fails, try starting fresh
+        isAudioPrimed = false;
+        isPaused = false;
+        await startPlayback();
     }
 }
 
 // Stop playback
 function stopPlayback() {
-    console.log('Stopping playback');
-    if (synthControl) {
-        synthControl.pause();
+    console.log('[ABC Debug] stopPlayback called');
 
-        // Seek back to the beginning
-        try {
-            // Check if seek method exists (abcjs API may vary by version)
-            if ('seek' in synthControl && typeof synthControl.seek === 'function') {
-                synthControl.seek(0);
-            } else {
-                // Alternative: restart playback
-                synthControl.pause();
-            }
-        } catch (error) {
-            console.error('Error seeking to start:', error);
-        }
-
-        // Remove highlighting and reset cursor
-        const highlighted = notationRef.value?.querySelectorAll('.abcjs-note_selected');
-        highlighted?.forEach((el: Element) => {
-            el.classList.remove('abcjs-note_selected');
-        });
-
-        const cursor = notationRef.value?.querySelector('.abcjs-cursor');
-        if (cursor) {
-            cursor.setAttributeNS(null, 'x1', '0');
-            cursor.setAttributeNS(null, 'x2', '0');
-            cursor.setAttributeNS(null, 'y1', '0');
-            cursor.setAttributeNS(null, 'y2', '0');
-        }
+    if (createSynth) {
+        createSynth.stop();
     }
 
-    // Reset audio loaded state so it can start fresh
-    isAudioLoaded = false;
+    if (timingCallbacks) {
+        timingCallbacks.stop();
+    }
+
+    // Remove highlighting and reset cursor
+    const highlighted = notationRef.value?.querySelectorAll('.abcjs-note_selected');
+    highlighted?.forEach((el: Element) => {
+        el.classList.remove('abcjs-note_selected');
+    });
+
+    const cursor = notationRef.value?.querySelector('.abcjs-cursor');
+    if (cursor) {
+        cursor.setAttributeNS(null, 'x1', '0');
+        cursor.setAttributeNS(null, 'x2', '0');
+        cursor.setAttributeNS(null, 'y1', '0');
+        cursor.setAttributeNS(null, 'y2', '0');
+    }
+
+    // Reset state
+    isAudioPrimed = false;
+    isPaused = false;
+    createSynth = null;
+    timingCallbacks = null;
+
     emit('playStopped');
+    console.log('[ABC Debug] stopPlayback completed');
 }
 
 // Watch for play state changes
 watch(
     () => props.isPlaying,
-    (newValue) => {
+    (newValue, oldValue) => {
+        console.log('[ABC Debug] isPlaying watch triggered', {
+            newValue,
+            oldValue,
+            isAudioPrimed,
+            isPaused,
+        });
         if (newValue) {
-            // If audio is already loaded, just resume, otherwise start fresh
-            if (isAudioLoaded && synthControl) {
+            // If we're resuming from pause, use resumePlayback
+            if (isPaused && createSynth && timingCallbacks) {
+                console.log('[ABC Debug] isPlaying=true -> calling resumePlayback (paused state)');
                 resumePlayback();
             } else {
+                console.log('[ABC Debug] isPlaying=true -> calling startPlayback (fresh start)');
                 startPlayback();
             }
         } else {
+            console.log('[ABC Debug] isPlaying=false -> calling pausePlayback');
             pausePlayback();
         }
     },
@@ -318,29 +357,20 @@ watch(
 // Watch for tempo changes during playback
 watch(
     () => props.tempo,
-    async (newTempo) => {
-        if (synthControl && visualObj && isAudioLoaded) {
-            // If playing, we need to reload with new tempo
-            if (props.isPlaying) {
-                try {
-                    // Pause first
-                    synthControl.pause();
-
-                    // Reload the tune with new tempo
-                    await synthControl.setTune(visualObj[0], false, {
-                        qpm: newTempo || 120,
-                    });
-
-                    // Resume playback
-                    await synthControl.play();
-                } catch (error) {
-                    console.error('Error changing tempo:', error);
-                }
-            } else {
-                // Not playing, just update the tune settings for next play
-                await synthControl.setTune(visualObj[0], false, {
-                    qpm: newTempo || 120,
-                });
+    async (newTempo, oldTempo) => {
+        console.log('[ABC Debug] Tempo changed', {
+            newTempo,
+            oldTempo,
+            isPlaying: props.isPlaying,
+            isPaused,
+        });
+        // Tempo changes require restarting the synth with new settings
+        if ((props.isPlaying || isPaused) && (createSynth || timingCallbacks)) {
+            console.log('[ABC Debug] Tempo changed, restarting with new tempo');
+            const wasPlaying = props.isPlaying;
+            stopPlayback();
+            if (wasPlaying) {
+                await startPlayback();
             }
         }
     },
@@ -350,9 +380,8 @@ watch(
 watch(
     () => props.abc,
     () => {
-        // Reset audio loaded state when content changes
-        isAudioLoaded = false;
-        if (synthControl) {
+        // Reset state when content changes
+        if (createSynth || timingCallbacks) {
             stopPlayback();
         }
         renderNotation();
@@ -364,12 +393,17 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-    if (synthControl) {
-        synthControl.pause();
-        synthControl = null;
+    if (createSynth) {
+        createSynth.stop();
+        createSynth = null;
+    }
+    if (timingCallbacks) {
+        timingCallbacks.stop();
+        timingCallbacks = null;
     }
     visualObj = null;
-    isAudioLoaded = false;
+    isAudioPrimed = false;
+    isPaused = false;
 });
 </script>
 

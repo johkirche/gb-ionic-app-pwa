@@ -84,4 +84,14 @@ function navigateToSettings() {
     width: 100%;
     max-width: 300px;
 }
+
+.nav-buttons ion-button::part(native) {
+    justify-content: flex-start;
+    padding-left: 24px;
+}
+
+.nav-buttons ion-icon {
+    width: 24px;
+    text-align: center;
+}
 </style>

@@ -33,7 +33,7 @@
             <!-- Playlists List -->
             <ion-list v-else>
                 <!-- Create New Option -->
-                <ion-item button @click="navigateToCreate">
+                <ion-item button :detail="true" @click.stop="navigateToCreate">
                     <ion-icon slot="start" :icon="addCircleOutline" color="primary"></ion-icon>
                     <ion-label color="primary">Neue Playlist erstellen</ion-label>
                 </ion-item>
@@ -140,8 +140,21 @@ async function addToPlaylist(playlistId: string) {
 }
 
 function navigateToCreate() {
+    const returnPath = router.currentRoute.value.fullPath;
+    const songId = props.songId;
+
     emit('close');
-    router.push('/playlists/create');
+
+    // Small delay to ensure modal dismisses properly on mobile before navigation
+    setTimeout(() => {
+        router.push({
+            path: '/playlists/create',
+            query: {
+                returnTo: returnPath,
+                addSongId: songId,
+            },
+        });
+    }, 100);
 }
 </script>
 

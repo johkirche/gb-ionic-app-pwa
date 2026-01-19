@@ -18,8 +18,8 @@ import '@ionic/vue/css/padding.css';
  */
 
 /* @import '@ionic/vue/css/palettes/dark.always.css'; */
-/* @import '@ionic/vue/css/palettes/dark.class.css'; */
-import '@ionic/vue/css/palettes/dark.system.css';
+import '@ionic/vue/css/palettes/dark.class.css';
+/* @import '@ionic/vue/css/palettes/dark.system.css'; */
 import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/text-alignment.css';
 import '@ionic/vue/css/text-transformation.css';

@@ -63,11 +63,7 @@
                             <ion-item class="transparent">
                                 <ion-icon :icon="contrastOutline" slot="start"></ion-icon>
                                 <ion-label>Farbschema</ion-label>
-                                <ion-select
-                                    v-model="themeMode"
-                                    interface="popover"
-                                    @ionChange="onThemeChange"
-                                >
+                                <ion-select v-model="themeMode" @ionChange="onThemeChange">
                                     <ion-select-option value="system">System</ion-select-option>
                                     <ion-select-option value="light">Hell</ion-select-option>
                                     <ion-select-option value="dark">Dunkel</ion-select-option>
@@ -77,11 +73,7 @@
                             <ion-item class="transparent">
                                 <ion-icon :icon="textOutline" slot="start"></ion-icon>
                                 <ion-label>Textgröße (Lieder)</ion-label>
-                                <ion-select
-                                    v-model="songFontSize"
-                                    interface="popover"
-                                    @ionChange="onFontSizeChange"
-                                >
+                                <ion-select v-model="songFontSize" @ionChange="onFontSizeChange">
                                     <ion-select-option value="small">Klein</ion-select-option>
                                     <ion-select-option value="medium">Normal</ion-select-option>
                                     <ion-select-option value="large">Groß</ion-select-option>
@@ -99,25 +91,18 @@
                     </ion-card-header>
                     <ion-card-content>
                         <ion-list class="transparent">
-                            <ion-item class="transparent" button @click="navigateToDownload">
+                            <ion-item
+                                class="transparent"
+                                button
+                                lines="none"
+                                @click="navigateToDownload"
+                            >
                                 <ion-icon :icon="cloudDownloadOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Heruntergeladene Inhalte</h3>
                                     <p>{{ songsCount }} Lieder, {{ filesCount }} Dateien</p>
                                 </ion-label>
                                 <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
-                            </ion-item>
-
-                            <ion-item class="transparent" button @click="handleClearCache">
-                                <ion-icon
-                                    :icon="trashBinOutline"
-                                    slot="start"
-                                    color="warning"
-                                ></ion-icon>
-                                <ion-label color="warning">
-                                    <h3>Cache leeren</h3>
-                                    <p>Temporäre Daten löschen</p>
-                                </ion-label>
                             </ion-item>
                         </ion-list>
                     </ion-card-content>
@@ -219,7 +204,6 @@ import {
     personOutline,
     shieldCheckmarkOutline,
     textOutline,
-    trashBinOutline,
     trashOutline,
 } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
@@ -364,43 +348,6 @@ async function handleLogout() {
                 handler: async () => {
                     await logout();
                     router.push('/login');
-                },
-            },
-        ],
-    });
-    await alert.present();
-}
-
-async function handleClearCache() {
-    const alert = await alertController.create({
-        header: 'Cache leeren',
-        message:
-            'Möchten Sie den Cache leeren? Dies betrifft nur temporäre Daten, nicht Ihre heruntergeladenen Lieder.',
-        buttons: [
-            {
-                text: 'Abbrechen',
-                role: 'cancel',
-            },
-            {
-                text: 'Cache leeren',
-                handler: async () => {
-                    try {
-                        // Clear any cached data (e.g., service worker cache)
-                        if ('caches' in window) {
-                            const cacheNames = await caches.keys();
-                            await Promise.all(cacheNames.map((name) => caches.delete(name)));
-                        }
-
-                        const toast = await toastController.create({
-                            message: 'Cache wurde geleert.',
-                            duration: 2000,
-                            position: 'bottom',
-                            color: 'success',
-                        });
-                        await toast.present();
-                    } catch (error) {
-                        console.error('Error clearing cache:', error);
-                    }
                 },
             },
         ],

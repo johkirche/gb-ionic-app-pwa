@@ -93,12 +93,18 @@ import {
     IonToolbar,
 } from '@ionic/vue';
 import { addOutline, checkmarkOutline } from 'ionicons/icons';
+import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 
 import { usePlaylistsStore } from '@/stores/playlists';
 
 const router = useRouter();
+const route = useRoute();
 const playlistsStore = usePlaylistsStore();
+
+// Query params for return-to-modal flow
+const returnTo = computed(() => route.query.returnTo as string | undefined);
+const addSongId = computed(() => route.query.addSongId as string | undefined);
 
 const playlistName = ref('');
 const selectedEmoji = ref('🎵');
@@ -185,8 +191,15 @@ async function createPlaylist() {
             playlistName.value.trim(),
             selectedEmoji.value,
         );
-        // Navigate to the new playlist
-        router.replace(`/playlists/${playlist.id}`);
+
+        // If we came from the playlist select modal, add the song and go back
+        if (returnTo.value && addSongId.value) {
+            await playlistsStore.addSongToPlaylist(playlist.id, addSongId.value);
+            router.replace(returnTo.value);
+        } else {
+            // Navigate to the new playlist
+            router.replace(`/playlists/${playlist.id}`);
+        }
     } catch (error) {
         console.error('Failed to create playlist:', error);
     }
