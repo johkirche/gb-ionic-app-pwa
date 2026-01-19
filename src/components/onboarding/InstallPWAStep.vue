@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { IonButton, IonIcon } from '@ionic/vue';
 import {
@@ -168,9 +168,8 @@ defineEmits<{
     skip: [];
 }>();
 
-// Use the PWA composable
-const { isIOS, isAndroid, isStandalone, canInstall, installPWA, initPWAListeners, isInstalled } =
-    usePWA();
+// Use the PWA composable (listeners are initialized in main.ts)
+const { isIOS, isAndroid, isStandalone, canInstall, installPWA, isInstalled } = usePWA();
 
 const isDev = import.meta.env.DEV;
 const previewDevice = ref<'auto' | 'ios' | 'android' | 'desktop'>('auto');
@@ -208,11 +207,6 @@ function cyclePreviewDevice() {
     const currentIndex = order.indexOf(previewDevice.value);
     previewDevice.value = order[(currentIndex + 1) % order.length];
 }
-
-// Initialize PWA listeners on mount
-onMounted(() => {
-    initPWAListeners();
-});
 </script>
 
 <style scoped>

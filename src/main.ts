@@ -27,12 +27,17 @@ import '@ionic/vue/css/typography.css';
 import { createPinia } from 'pinia';
 
 import App from './App.vue';
+import { usePWA } from './composables/usePWA';
 import { longPressDirective } from './directives/longPress';
 import router from './router';
 /* Theme variables */
 import './theme/variables.css';
 
 const pinia = createPinia();
+
+// Initialize PWA listeners early to capture beforeinstallprompt event
+const { initPWAListeners } = usePWA();
+initPWAListeners();
 
 const app = createApp(App).use(IonicVue).use(pinia).use(router);
 
