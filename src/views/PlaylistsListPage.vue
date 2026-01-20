@@ -21,19 +21,25 @@
                 <ion-icon :icon="albumsOutline" size="large"></ion-icon>
                 <h2>Keine Playlisten</h2>
                 <p>Erstellen Sie Ihre erste Playlist, um Lieder zu organisieren.</p>
-                <ion-button @click="navigateToCreate">
+                <ion-button
+                    @click="navigateToCreate"
+                    class="create-button"
+                    size="default"
+                    fill="solid"
+                >
                     <ion-icon slot="start" :icon="addOutline"></ion-icon>
                     Playlist erstellen
                 </ion-button>
             </div>
 
             <!-- Playlists List -->
-            <ion-list v-else class="playlist-list">
+            <ion-list v-else class="playlist-list" lines="full">
                 <ion-item
                     v-for="playlist in sortedPlaylists"
                     :key="playlist.id"
                     button
                     detail
+                    v-long-press="() => showActionSheet(playlist)"
                     @click="navigateToPlaylist(playlist.id)"
                 >
                     <div slot="start" class="playlist-emoji">
@@ -77,12 +83,16 @@ import {
     IonSpinner,
     IonTitle,
     IonToolbar,
+    actionSheetController,
 } from '@ionic/vue';
-import { addOutline, albumsOutline } from 'ionicons/icons';
+import { addOutline, albumsOutline, closeOutline, trashOutline } from 'ionicons/icons';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 
 import { usePlaylistsStore } from '@/stores/playlists';
+
+import type { Playlist } from '@/db';
+import { longPressDirective as vLongPress } from '@/directives/longPress';
 
 const router = useRouter();
 const playlistsStore = usePlaylistsStore();
@@ -103,6 +113,37 @@ function formatDate(date: Date): string {
         year: 'numeric',
     }).format(new Date(date));
 }
+
+async function showActionSheet(playlist: Playlist) {
+    const actionSheet = await actionSheetController.create({
+        header: playlist.name,
+        buttons: [
+            {
+                text: 'Löschen',
+                role: 'destructive',
+                icon: trashOutline,
+                handler: () => {
+                    deletePlaylist(playlist);
+                },
+            },
+            {
+                text: 'Abbrechen',
+                role: 'cancel',
+                icon: closeOutline,
+            },
+        ],
+    });
+
+    await actionSheet.present();
+}
+
+async function deletePlaylist(playlist: Playlist) {
+    try {
+        await playlistsStore.deletePlaylist(playlist.id);
+    } catch (error) {
+        console.error('Failed to delete playlist:', error);
+    }
+}
 </script>
 
 <style scoped>
@@ -121,7 +162,6 @@ function formatDate(date: Date): string {
     background: var(--ion-color-light);
     border-radius: 8px;
     margin-right: 8px;
-    margin-left: var(--spacing-sm);
 }
 
 .state-container {
@@ -137,7 +177,6 @@ function formatDate(date: Date): string {
 .state-container ion-icon {
     font-size: 64px;
     color: var(--ion-color-medium);
-    margin-bottom: 16px;
 }
 
 .state-container h2 {
@@ -150,7 +189,20 @@ function formatDate(date: Date): string {
     color: var(--ion-color-medium);
 }
 
-.empty-state ion-button {
-    margin-top: 8px;
+.empty-state .create-button {
+    margin-top: 24px;
+    --padding-start: 24px;
+    --padding-end: 24px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.empty-state .create-button ion-icon {
+    color: white;
+    margin-right: 8px;
+    font-size: 20px;
 }
 </style>

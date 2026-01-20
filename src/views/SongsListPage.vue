@@ -109,7 +109,7 @@
                         @contextmenu.prevent="openSongActions(song.id)"
                         v-long-press="() => openSongActions(song.id)"
                     >
-                        <ion-label class="ion-padding-horizontal">
+                        <ion-label>
                             <h2>
                                 <span v-if="sortMode === 'index'" class="song-index">
                                     {{ song.index }}.

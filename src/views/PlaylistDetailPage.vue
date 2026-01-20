@@ -55,14 +55,12 @@
             <!-- Playlist Content -->
             <template v-else>
                 <!-- Playlist Header -->
-                <div class="playlist-header">
-                    <div class="playlist-emoji-large">{{ playlist.emoji }}</div>
-                    <h1 class="playlist-title">{{ playlist.name }}</h1>
-                    <p class="playlist-meta">
-                        {{ songs.length }} {{ songs.length === 1 ? 'Lied' : 'Lieder' }} · Erstellt
-                        am {{ formatDate(playlist.createdAt) }}
-                    </p>
-                </div>
+                <PlaylistHeader
+                    :emoji="playlist.emoji"
+                    :name="playlist.name"
+                    :song-count="songs.length"
+                    :created-at="playlist.createdAt"
+                />
 
                 <!-- Empty Playlist State -->
                 <div v-if="songs.length === 0" class="state-container empty-state">
@@ -76,30 +74,14 @@
                 </div>
 
                 <!-- Songs List -->
-                <ion-list v-else class="songs-list">
-                    <ion-reorder-group :disabled="!reorderMode" @ionItemReorder="handleReorder">
-                        <ion-item
-                            v-for="song in songs"
-                            :key="song.id"
-                            :button="!reorderMode"
-                            :detail="!reorderMode"
-                            @click="!reorderMode && navigateToSong(song.id)"
-                            @contextmenu.prevent="!reorderMode && showSongActions(song)"
-                            v-long-press="() => !reorderMode && showSongActions(song)"
-                        >
-                            <ion-label class="ion-padding-horizontal">
-                                <h2>
-                                    <span class="song-index">{{ song.index }}.</span>
-                                    {{ song.titel }}
-                                </h2>
-                                <p v-if="song.kategorien.length > 0">
-                                    {{ formatCategories(song.kategorien) }}
-                                </p>
-                            </ion-label>
-                            <ion-reorder slot="end"></ion-reorder>
-                        </ion-item>
-                    </ion-reorder-group>
-                </ion-list>
+                <PlaylistSongsList
+                    v-else
+                    :songs="songs"
+                    :reorder-mode="reorderMode"
+                    @song-click="(song) => navigateToSong(song.id)"
+                    @song-context-menu="showSongActions"
+                    @reorder="handleReorder"
+                />
 
                 <!-- FAB for adding songs -->
                 <ion-fab v-if="songs.length > 0" slot="fixed" vertical="bottom" horizontal="end">
@@ -119,72 +101,19 @@
             ></ion-alert>
 
             <!-- Edit Modal -->
-            <ion-modal :is-open="showEditModal" @didDismiss="showEditModal = false">
-                <ion-header>
-                    <ion-toolbar>
-                        <ion-buttons slot="start">
-                            <ion-button @click="showEditModal = false">Abbrechen</ion-button>
-                        </ion-buttons>
-                        <ion-title>Playlist bearbeiten</ion-title>
-                        <ion-buttons slot="end">
-                            <ion-button :disabled="!editName.trim()" @click="saveEdit">
-                                Speichern
-                            </ion-button>
-                        </ion-buttons>
-                    </ion-toolbar>
-                </ion-header>
-                <ion-content class="ion-padding">
-                    <div class="edit-form">
-                        <!-- Emoji Picker -->
-                        <div class="emoji-section">
-                            <button class="emoji-display" @click="showEmojiPicker = true">
-                                {{ editEmoji }}
-                            </button>
-                        </div>
-
-                        <!-- Name Input -->
-                        <ion-item>
-                            <ion-input
-                                v-model="editName"
-                                label="Name der Playlist"
-                                label-placement="stacked"
-                                :clear-input="true"
-                            ></ion-input>
-                        </ion-item>
-                    </div>
-
-                    <!-- Emoji Picker (nested) -->
-                    <ion-modal :is-open="showEmojiPicker" @didDismiss="showEmojiPicker = false">
-                        <ion-header>
-                            <ion-toolbar>
-                                <ion-title>Emoji wählen</ion-title>
-                                <ion-buttons slot="end">
-                                    <ion-button @click="showEmojiPicker = false">Fertig</ion-button>
-                                </ion-buttons>
-                            </ion-toolbar>
-                        </ion-header>
-                        <ion-content class="ion-padding">
-                            <div class="emoji-grid">
-                                <button
-                                    v-for="emoji in commonEmojis"
-                                    :key="emoji"
-                                    class="emoji-option"
-                                    :class="{ selected: emoji === editEmoji }"
-                                    @click="selectEmoji(emoji)"
-                                >
-                                    {{ emoji }}
-                                </button>
-                            </div>
-                        </ion-content>
-                    </ion-modal>
-                </ion-content>
-            </ion-modal>
+            <PlaylistEditModal
+                :is-open="showEditModal"
+                :name="playlist?.name || ''"
+                :emoji="playlist?.emoji || '🎵'"
+                @close="showEditModal = false"
+                @save="saveEdit"
+            />
         </ion-content>
     </ion-page>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 import {
     IonAlert,
@@ -196,15 +125,11 @@ import {
     IonFabButton,
     IonHeader,
     IonIcon,
-    IonInput,
     IonItem,
     IonLabel,
     IonList,
-    IonModal,
     IonPage,
     IonPopover,
-    IonReorder,
-    IonReorderGroup,
     IonSpinner,
     IonTitle,
     IonToolbar,
@@ -226,7 +151,11 @@ import { useRoute, useRouter } from 'vue-router';
 import { usePlaylistsStore } from '@/stores/playlists';
 import { useSongsStore } from '@/stores/songs';
 
-import type { Category, Song } from '@/db';
+import PlaylistEditModal from '@/components/playlist/PlaylistEditModal.vue';
+import PlaylistHeader from '@/components/playlist/PlaylistHeader.vue';
+import PlaylistSongsList from '@/components/playlist/PlaylistSongsList.vue';
+
+import type { Song } from '@/db';
 
 const route = useRoute();
 const router = useRouter();
@@ -239,9 +168,6 @@ const { songs: allSongs } = storeToRefs(songsStore);
 // UI State
 const showDeleteAlert = ref(false);
 const showEditModal = ref(false);
-const showEmojiPicker = ref(false);
-const editName = ref('');
-const editEmoji = ref('');
 const reorderMode = ref(false);
 
 // Get current playlist
@@ -257,84 +183,6 @@ const songs = computed<Song[]>(() => {
         .map((id) => allSongs.value.find((s) => s.id === id))
         .filter((s): s is Song => s !== undefined);
 });
-
-// Watch for playlist changes to update edit form
-watch(
-    playlist,
-    (p) => {
-        if (p) {
-            editName.value = p.name;
-            editEmoji.value = p.emoji;
-        }
-    },
-    { immediate: true },
-);
-
-// Common emojis
-const commonEmojis = [
-    '🎵',
-    '🎶',
-    '🎼',
-    '🎹',
-    '🎸',
-    '🎺',
-    '🎻',
-    '🥁',
-    '🎤',
-    '🎧',
-    '🎭',
-    '⛪',
-    '✝️',
-    '🙏',
-    '💒',
-    '📖',
-    '📿',
-    '🕊️',
-    '👼',
-    '😇',
-    '🌟',
-    '⭐',
-    '✨',
-    '💫',
-    '🌈',
-    '🌸',
-    '🌺',
-    '🌻',
-    '🌹',
-    '💐',
-    '❤️',
-    '💙',
-    '💚',
-    '💛',
-    '💜',
-    '🤍',
-    '☀️',
-    '🌙',
-    '🕯️',
-    '🔔',
-    '🎄',
-    '🐣',
-    '🎃',
-    '🍂',
-    '❄️',
-    '🎉',
-    '🎊',
-    '👨‍👩‍👧‍👦',
-    '👶',
-    '👧',
-    '👦',
-    '🧒',
-    '👴',
-    '👵',
-    '🤝',
-    '💪',
-    '🏃',
-    '🧘',
-    '📅',
-    '📌',
-    '🏠',
-    '🌍',
-];
 
 // Delete alert buttons
 const deleteAlertButtons = [
@@ -388,17 +236,12 @@ async function handleReorder(event: CustomEvent<ItemReorderEventDetail>) {
     }
 }
 
-function selectEmoji(emoji: string) {
-    editEmoji.value = emoji;
-    showEmojiPicker.value = false;
-}
-
-async function saveEdit() {
-    if (!playlist.value || !editName.value.trim()) return;
+async function saveEdit(data: { name: string; emoji: string }) {
+    if (!playlist.value) return;
     try {
         await playlistsStore.updatePlaylist(playlist.value.id, {
-            name: editName.value.trim(),
-            emoji: editEmoji.value,
+            name: data.name,
+            emoji: data.emoji,
         });
         showEditModal.value = false;
     } catch (error) {
@@ -444,62 +287,9 @@ function navigateToAddSongs() {
 function navigateToSong(songId: string) {
     router.push(`/songs/${songId}`);
 }
-
-function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('de-DE', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-    }).format(new Date(date));
-}
-
-function formatCategories(categories: Category[]): string {
-    return categories.map((c) => c.name).join(', ');
-}
 </script>
 
 <style scoped>
-.playlist-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 16px;
-    text-align: center;
-    background: linear-gradient(
-        180deg,
-        var(--ion-color-light) 0%,
-        var(--ion-background-color) 100%
-    );
-}
-
-.playlist-emoji-large {
-    font-size: 4rem;
-    margin-bottom: 8px;
-}
-
-.playlist-title {
-    margin: 0 0 4px;
-    font-size: 1.5rem;
-}
-
-.playlist-meta {
-    margin: 0;
-    color: var(--ion-color-medium);
-    font-size: 0.9rem;
-}
-
-.songs-list {
-    margin-top: 1rem;
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-.song-index {
-    font-weight: 600;
-    color: var(--ion-color-primary);
-    margin-right: 4px;
-}
-
 .state-container {
     display: flex;
     flex-direction: column;
@@ -527,54 +317,5 @@ function formatCategories(categories: Category[]): string {
 
 .empty-state ion-button {
     margin-top: 8px;
-}
-
-.edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.emoji-section {
-    display: flex;
-    justify-content: center;
-    padding-top: 16px;
-}
-
-.emoji-display {
-    font-size: 4rem;
-    width: 100px;
-    height: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--ion-color-light);
-    border: 2px solid var(--ion-color-medium);
-    border-radius: 20px;
-    cursor: pointer;
-}
-
-.emoji-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
-    gap: 8px;
-}
-
-.emoji-option {
-    font-size: 1.75rem;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--ion-color-light);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.emoji-option.selected {
-    border-color: var(--ion-color-primary);
-    background: var(--ion-color-primary-tint);
 }
 </style>

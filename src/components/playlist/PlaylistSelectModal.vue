@@ -24,7 +24,12 @@
             <div v-else-if="!hasPlaylists" class="empty-state">
                 <ion-icon :icon="albumsOutline" size="large"></ion-icon>
                 <p>Keine Playlisten vorhanden</p>
-                <ion-button size="small" @click="navigateToCreate">
+                <ion-button
+                    class="create-button"
+                    size="default"
+                    fill="solid"
+                    @click="navigateToCreate"
+                >
                     <ion-icon slot="start" :icon="addOutline"></ion-icon>
                     Playlist erstellen
                 </ion-button>
@@ -189,11 +194,27 @@ function navigateToCreate() {
 .empty-state ion-icon {
     font-size: 48px;
     color: var(--ion-color-medium);
-    margin-bottom: 8px;
 }
 
 .empty-state p {
     margin: 0 0 16px;
     color: var(--ion-color-medium);
+}
+
+.empty-state .create-button {
+    margin-top: 8px;
+    --padding-start: 24px;
+    --padding-end: 24px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.empty-state .create-button ion-icon {
+    color: white;
+    margin-right: 8px;
+    font-size: 20px;
 }
 </style>

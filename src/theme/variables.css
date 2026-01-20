@@ -48,10 +48,6 @@ http://ionicframework.com/docs/theming/ */
    Global Ionic Component Overrides
    ============================================ */
 
-ion-item {
-    --padding-start: 0 !important;
-}
-
 ion-button {
     --border-radius: var(--radius-md);
     gap: var(--spacing-sm);
