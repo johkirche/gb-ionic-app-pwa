@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 
-import { readMe } from '@directus/sdk';
+import { readMe, refresh } from '@directus/sdk';
 
 import { useUserStore } from '@/stores/user';
 
@@ -19,12 +19,12 @@ export async function refreshAuthToken(): Promise<boolean> {
             return false;
         }
 
-        debugger;
-
-        const result = await directusClient.refresh({
-            refresh_token: refreshToken,
-            mode: 'json',
-        });
+        const result = await directusClient.request(
+            refresh({
+                refresh_token: refreshToken,
+                mode: 'json',
+            }),
+        );
 
         if (result.access_token && result.refresh_token) {
             const expiresAt = Date.now() + (result.expires || 900000);

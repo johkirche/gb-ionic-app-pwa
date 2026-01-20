@@ -38,20 +38,35 @@ export function usePWA() {
         if (isListening) return;
         isListening = true;
 
+        console.log('PWA: Initializing listeners');
+        console.log('PWA: User Agent', navigator.userAgent);
+
+        const isStandaloneMatch = window.matchMedia('(display-mode: standalone)').matches;
+        const isNavigatorStandalone = (window.navigator as any).standalone === true;
+        const isReferrerAndroidAction = document.referrer.includes('android-app://');
+
+        console.log('PWA: Standalone check:', {
+            matchMedia: isStandaloneMatch,
+            navigatorStandalone: isNavigatorStandalone,
+            referrer: isReferrerAndroidAction,
+        });
+
         // Check if already installed
-        isInstalledRef.value =
-            window.matchMedia('(display-mode: standalone)').matches ||
-            (window.navigator as any).standalone === true;
+        isInstalledRef.value = isStandaloneMatch || isNavigatorStandalone;
+        console.log('PWA: isInstalledRef initialized to:', isInstalledRef.value);
 
         // Capture the beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e: Event) => {
+            console.log('PWA: beforeinstallprompt fired');
             e.preventDefault();
             deferredPrompt = e;
             canInstallRef.value = true;
+            console.log('PWA: canInstallRef set to true');
         });
 
         // Handle successful installation
         window.addEventListener('appinstalled', () => {
+            console.log('PWA: appinstalled fired');
             deferredPrompt = null;
             canInstallRef.value = false;
             isInstalledRef.value = true;
@@ -60,11 +75,13 @@ export function usePWA() {
 
     // Trigger the install prompt
     async function installPWA(): Promise<boolean> {
+        console.log('PWA: installPWA called. deferredPrompt exists:', !!deferredPrompt);
         if (!deferredPrompt) return false;
 
         try {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
+            console.log('PWA: User choice outcome:', outcome);
 
             if (outcome === 'accepted') {
                 deferredPrompt = null;
@@ -73,7 +90,7 @@ export function usePWA() {
             }
             return false;
         } catch (error) {
-            console.error('Error during PWA installation:', error);
+            console.error('PWA: Error during PWA installation:', error);
             return false;
         }
     }

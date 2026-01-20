@@ -32,18 +32,22 @@
                             @ionChange="showControls = $event.detail.checked"
                         />
                     </ion-item>
-                    <ion-item>
-                        <ion-icon slot="start" :icon="textOutline" />
-                        <ion-label>Textgröße</ion-label>
-                        <ion-select
-                            v-model="textSize"
-                            interface="popover"
-                            :interface-options="{ cssClass: 'text-size-select' }"
-                        >
-                            <ion-select-option value="small">Klein</ion-select-option>
-                            <ion-select-option value="medium">Normal</ion-select-option>
-                            <ion-select-option value="large">Groß</ion-select-option>
-                        </ion-select>
+                    <ion-item v-if="hasMelody">
+                        <ion-icon slot="start" :icon="musicalNoteOutline" />
+                        <ion-label>
+                            <p>Notengröße</p>
+                            <p class="scale-value">{{ Math.round(notationScale * 100) }}%</p>
+                        </ion-label>
+                        <ion-range
+                            slot="end"
+                            :min="0.5"
+                            :max="2.0"
+                            :step="0.1"
+                            :value="notationScale"
+                            :pin="true"
+                            :pin-formatter="(value: number) => `${Math.round(value * 100)}%`"
+                            @ionInput="updateNotationScale($event.detail.value)"
+                        />
                     </ion-item>
                 </ion-list>
             </ion-content>
@@ -80,6 +84,7 @@
                         :is-playing="isPlaying"
                         :tempo="tempo"
                         :loop="loopEnabled"
+                        :scale="notationScale"
                         @play-started="isPlaying = true"
                         @play-stopped="isPlaying = false"
                     />
@@ -186,6 +191,7 @@ import {
     IonListHeader,
     IonPage,
     IonPopover,
+    IonRange,
     IonSelect,
     IonSelectOption,
     IonSpinner,
@@ -211,6 +217,7 @@ import {
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 
+import { usePreferencesStore } from '@/stores/preferences';
 import { useSongsStore } from '@/stores/songs';
 
 import AbcRenderer from '@/components/songview/AbcRenderer.vue';
@@ -220,6 +227,9 @@ import type { Autor, Song } from '@/db';
 const route = useRoute();
 const songsStore = useSongsStore();
 const { songs, isLoading } = storeToRefs(songsStore);
+
+const preferencesStore = usePreferencesStore();
+const { notationScale, textSize } = storeToRefs(preferencesStore);
 
 // Refs
 const abcRendererRef = ref<InstanceType<typeof AbcRenderer> | null>(null);
@@ -235,7 +245,6 @@ const tempo = ref(120);
 
 // Display options
 const showControls = ref(true);
-const textSize = ref<'small' | 'medium' | 'large'>('medium');
 
 // Get the default melody ABC notation
 const defaultMelodyAbc = computed(() => {
@@ -321,6 +330,17 @@ function decreaseTempo() {
     if (tempo.value > 60) {
         tempo.value -= 10;
     }
+}
+
+// Notation scale control
+function updateNotationScale(value: number | number[] | { lower: number; upper: number }) {
+    let scale: number;
+    if (typeof value === 'object' && !Array.isArray(value)) {
+        scale = value.lower; // For dual knob ranges (we don't use this)
+    } else {
+        scale = Array.isArray(value) ? value[0] : value;
+    }
+    preferencesStore.setNotationScale(scale);
 }
 
 // Format authors for display
@@ -537,5 +557,21 @@ ion-popover ion-item {
     --padding-start: var(--spacing-md);
     --padding-end: var(--spacing-md);
     --inner-padding-end: 0;
+}
+
+.scale-value {
+    font-size: 0.85rem;
+    color: var(--ion-color-primary);
+    font-weight: 500;
+}
+
+ion-popover ion-range {
+    --bar-background: var(--ion-color-light);
+    --bar-background-active: var(--ion-color-primary);
+    --knob-background: var(--ion-color-primary);
+    --knob-size: 20px;
+    --pin-background: var(--ion-color-primary);
+    padding: 0 8px;
+    width: 120px;
 }
 </style>

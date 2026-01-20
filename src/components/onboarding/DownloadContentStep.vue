@@ -217,7 +217,7 @@ defineEmits<{
     align-items: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-lg);
-    background: var(--ion-color-success-tint);
+    background: rgba(var(--ion-color-success-rgb), 0.1);
     border-radius: var(--radius-lg);
     margin-bottom: var(--spacing-lg);
 }
@@ -228,7 +228,7 @@ defineEmits<{
 
 .download-complete p {
     margin: 0;
-    color: var(--ion-color-success-shade);
+    color: var(--ion-color-success);
     font-weight: 500;
     text-align: center;
 }

@@ -16,7 +16,7 @@
                         <ion-card-title>Konto</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list class="transparent">
+                        <ion-list class="transparent" lines="full">
                             <ion-item class="transparent">
                                 <ion-icon :icon="personOutline" slot="start"></ion-icon>
                                 <ion-label>
@@ -43,9 +43,9 @@
                                 <ion-icon
                                     :icon="logOutOutline"
                                     slot="start"
-                                    color="medium"
+                                    color="danger"
                                 ></ion-icon>
-                                <ion-label color="medium">
+                                <ion-label color="danger">
                                     <h3>Abmelden</h3>
                                 </ion-label>
                             </ion-item>
@@ -59,7 +59,7 @@
                         <ion-card-title>Darstellung</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list class="transparent">
+                        <ion-list class="transparent" lines="full">
                             <ion-item class="transparent">
                                 <ion-icon :icon="contrastOutline" slot="start"></ion-icon>
                                 <ion-label>Farbschema</ion-label>
@@ -73,12 +73,35 @@
                             <ion-item class="transparent">
                                 <ion-icon :icon="textOutline" slot="start"></ion-icon>
                                 <ion-label>Textgröße (Lieder)</ion-label>
-                                <ion-select v-model="songFontSize" @ionChange="onFontSizeChange">
+                                <ion-select v-model="songFontSize">
                                     <ion-select-option value="small">Klein</ion-select-option>
                                     <ion-select-option value="medium">Normal</ion-select-option>
                                     <ion-select-option value="large">Groß</ion-select-option>
                                     <ion-select-option value="xlarge">Sehr groß</ion-select-option>
                                 </ion-select>
+                            </ion-item>
+
+                            <ion-item class="transparent">
+                                <ion-icon :icon="musicalNoteOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>Notengröße</h3>
+                                    <p>{{ Math.round(notationScale * 100) }}%</p>
+                                </ion-label>
+                            </ion-item>
+                            <ion-item class="transparent" lines="none">
+                                <ion-range
+                                    :min="0.5"
+                                    :max="2.0"
+                                    :step="0.1"
+                                    v-model="notationScale"
+                                    :pin="true"
+                                    :pin-formatter="
+                                        (value: number) => `${Math.round(value * 100)}%`
+                                    "
+                                >
+                                    <ion-label slot="start">50%</ion-label>
+                                    <ion-label slot="end">200%</ion-label>
+                                </ion-range>
                             </ion-item>
                         </ion-list>
                     </ion-card-content>
@@ -90,7 +113,7 @@
                         <ion-card-title>Daten</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list class="transparent">
+                        <ion-list class="transparent" lines="full">
                             <ion-item
                                 class="transparent"
                                 button
@@ -135,7 +158,7 @@
                         <ion-card-title>Über die App</ion-card-title>
                     </ion-card-header>
                     <ion-card-content>
-                        <ion-list class="transparent">
+                        <ion-list class="transparent" lines="full">
                             <ion-item class="transparent">
                                 <ion-icon :icon="informationCircleOutline" slot="start"></ion-icon>
                                 <ion-label>
@@ -187,6 +210,7 @@ import {
     IonLabel,
     IonList,
     IonPage,
+    IonRange,
     IonSelect,
     IonSelectOption,
     alertController,
@@ -201,6 +225,7 @@ import {
     informationCircleOutline,
     logOutOutline,
     mailOutline,
+    musicalNoteOutline,
     personOutline,
     shieldCheckmarkOutline,
     textOutline,
@@ -208,6 +233,7 @@ import {
 } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 
+import { usePreferencesStore } from '@/stores/preferences';
 import { useSongsStore } from '@/stores/songs';
 
 import { useAuth } from '@/composables/useAuth';
@@ -215,13 +241,21 @@ import { useAuth } from '@/composables/useAuth';
 const router = useRouter();
 const { user, logout, isLoggedIn } = useAuth();
 const songsStore = useSongsStore();
+const preferencesStore = usePreferencesStore();
 
 // App version - could be pulled from package.json in a real setup
 const appVersion = ref('1.0.0');
 
 // Appearance settings
 const themeMode = ref<'system' | 'light' | 'dark'>('system');
-const songFontSize = ref<'small' | 'medium' | 'large' | 'xlarge'>('medium');
+const songFontSize = computed({
+    get: () => preferencesStore.textSize,
+    set: (value) => preferencesStore.setTextSize(value),
+});
+const notationScale = computed({
+    get: () => preferencesStore.notationScale,
+    set: (value) => preferencesStore.setNotationScale(value),
+});
 
 // Data counts
 const songsCount = computed(() => songsStore.songs.length);
@@ -248,12 +282,7 @@ async function loadSettings() {
         themeMode.value = savedTheme as 'system' | 'light' | 'dark';
     }
 
-    // Load font size preference
-    const savedFontSize = localStorage.getItem('settings.songFontSize');
-    if (savedFontSize && ['small', 'medium', 'large', 'xlarge'].includes(savedFontSize)) {
-        songFontSize.value = savedFontSize as 'small' | 'medium' | 'large' | 'xlarge';
-    }
-
+    // Preferences store loads automatically, no need to load here
     // Apply theme
     applyTheme(themeMode.value);
 }
@@ -275,10 +304,6 @@ function applyTheme(theme: 'system' | 'light' | 'dark') {
     } else {
         document.documentElement.classList.remove('ion-palette-dark');
     }
-}
-
-function onFontSizeChange() {
-    localStorage.setItem('settings.songFontSize', songFontSize.value);
 }
 
 function navigateToDownload() {
@@ -401,5 +426,19 @@ function openPrivacyPolicy() {
     line-height: 1.6;
     margin-bottom: var(--spacing-md);
     font-size: var(--font-size-sm);
+}
+
+ion-range {
+    --bar-background: var(--ion-color-light);
+    --bar-background-active: var(--ion-color-primary);
+    --knob-background: var(--ion-color-primary);
+    --knob-size: 20px;
+    --pin-background: var(--ion-color-primary);
+    padding: 8px 0;
+}
+
+ion-range ion-label {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
 }
 </style>

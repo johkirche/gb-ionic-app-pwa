@@ -48,6 +48,10 @@ http://ionicframework.com/docs/theming/ */
    Global Ionic Component Overrides
    ============================================ */
 
+ion-list ion-item:last-child {
+    --border-width: 0 !important;
+}
+
 ion-button {
     --border-radius: var(--radius-md);
     gap: var(--spacing-sm);
@@ -55,7 +59,11 @@ ion-button {
 
 ion-card {
     border-radius: var(--radius-lg);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
+}
+
+.card-content-md {
+    padding: 0 var(--spacing-sm) 0;
 }
 
 ion-list.transparent {

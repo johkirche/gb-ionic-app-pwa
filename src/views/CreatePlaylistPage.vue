@@ -91,6 +91,7 @@ import {
     IonPage,
     IonTitle,
     IonToolbar,
+    toastController,
 } from '@ionic/vue';
 import { addOutline, checkmarkOutline } from 'ionicons/icons';
 import { useRoute } from 'vue-router';
@@ -195,6 +196,16 @@ async function createPlaylist() {
         // If we came from the playlist select modal, add the song and go back
         if (returnTo.value && addSongId.value) {
             await playlistsStore.addSongToPlaylist(playlist.id, addSongId.value);
+
+            // Show success toast
+            const toast = await toastController.create({
+                message: `Lied zu "${playlist.name}" hinzugefügt`,
+                duration: 2500,
+                position: 'bottom',
+                color: 'success',
+            });
+            await toast.present();
+
             router.replace(returnTo.value);
         } else {
             // Navigate to the new playlist

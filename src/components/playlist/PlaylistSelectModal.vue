@@ -36,7 +36,7 @@
             </div>
 
             <!-- Playlists List -->
-            <ion-list v-else>
+            <ion-list v-else lines="full">
                 <!-- Create New Option -->
                 <ion-item button :detail="true" @click.stop="navigateToCreate">
                     <ion-icon slot="start" :icon="addCircleOutline" color="primary"></ion-icon>

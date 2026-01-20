@@ -138,7 +138,7 @@
                 Weiter
                 <ion-icon slot="end" :icon="arrowForwardOutline"></ion-icon>
             </ion-button>
-            <ion-button expand="block" fill="clear" color="medium" @click="$emit('skip')">
+            <ion-button expand="block" fill="clear" color="medium" @click="$emit('next')">
                 Überspringen
             </ion-button>
         </div>

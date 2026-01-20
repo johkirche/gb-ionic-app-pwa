@@ -27,6 +27,7 @@ const props = defineProps<{
     isPlaying?: boolean;
     tempo?: number;
     loop?: boolean;
+    scale?: number; // Scale factor for rendering (0.5 - 2.0)
 }>();
 
 const emit = defineEmits<{
@@ -73,11 +74,15 @@ function renderNotation() {
     try {
         renderError.value = null;
 
+        // Use scale prop (default to 1.0 if not provided)
+        const renderScale = props.scale ?? 1.0;
+
         // Render the notation (cast to any to allow titlefont which is valid but not in types)
         visualObj = abcjs.renderAbc(notationRef.value, props.abc, {
             responsive: 'resize',
             add_classes: true,
             staffwidth: 600,
+            scale: renderScale,
             paddingTop: 0,
             paddingLeft: 0,
             paddingRight: 0,
@@ -384,6 +389,15 @@ watch(
         if (createSynth || timingCallbacks) {
             stopPlayback();
         }
+        renderNotation();
+    },
+);
+
+// Watch for scale changes
+watch(
+    () => props.scale,
+    () => {
+        // Re-render when scale changes
         renderNotation();
     },
 );
