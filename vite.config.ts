@@ -14,7 +14,17 @@ export default defineConfig({
         vueDevTools(),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['favicon.png', 'logo.png', 'logo.svg', 'logo-black.png'],
+            includeAssets: [
+                'favicon.ico',
+                'favicon.png',
+                'favicon-16x16.png',
+                'favicon-32x32.png',
+                'apple-touch-icon.png',
+                'android-chrome-192x192.png',
+                'android-chrome-512x512.png',
+                'logo.svg',
+                'logo-black.png',
+            ],
             manifest: {
                 name: 'Johannische Kirche Gesangbuch',
                 short_name: 'Gesangbuch',
@@ -27,17 +37,17 @@ export default defineConfig({
                 start_url: '/',
                 icons: [
                     {
-                        src: 'logo.png',
+                        src: 'pwaicons/android/android-launchericon-192-192.png',
                         sizes: '192x192',
                         type: 'image/png',
                     },
                     {
-                        src: 'logo.png',
+                        src: 'pwaicons/android/android-launchericon-512-512.png',
                         sizes: '512x512',
                         type: 'image/png',
                     },
                     {
-                        src: 'logo.png',
+                        src: 'pwaicons/android/android-launchericon-512-512.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'maskable',
