@@ -1,15 +1,18 @@
 <template>
     <ion-page>
-        <ion-content :fullscreen="true">
-            <div class="content-container">
-                <!-- Page Header -->
-                <div class="page-header">
-                    <ion-button fill="clear" class="back-button" @click="$router.back()">
+        <ion-header :translucent="true" class="ion-no-border">
+            <ion-toolbar>
+                <ion-buttons slot="start">
+                    <ion-button @click="$router.back()">
                         <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
                     </ion-button>
-                    <h1 class="page-title">App installieren</h1>
-                </div>
+                </ion-buttons>
+                <ion-title>App installieren</ion-title>
+            </ion-toolbar>
+        </ion-header>
 
+        <ion-content :fullscreen="true">
+            <div class="content-container">
                 <InstallPWAStep mode="standalone" @done="handleDone" />
             </div>
         </ion-content>
@@ -17,7 +20,16 @@
 </template>
 
 <script setup lang="ts">
-import { IonButton, IonContent, IonIcon, IonPage } from '@ionic/vue';
+import {
+    IonButton,
+    IonButtons,
+    IonContent,
+    IonHeader,
+    IonIcon,
+    IonPage,
+    IonTitle,
+    IonToolbar,
+} from '@ionic/vue';
 import { arrowBackOutline } from 'ionicons/icons';
 import { useRouter } from 'vue-router';
 
@@ -36,7 +48,7 @@ function handleDone() {
     display: flex;
     flex-direction: column;
     padding: var(--spacing-xl) var(--spacing-lg);
-    max-width: var(--container-sm);
+    /* max-width: var(--container-sm); */
     margin: 0 auto;
 }
 </style>

@@ -103,7 +103,7 @@ watch(
     display: flex;
     flex-direction: column;
     padding: var(--spacing-xl) var(--spacing-lg);
-    max-width: var(--container-sm);
+    /* max-width: var(--container-sm); */
     margin: 0 auto;
 }
 </style>

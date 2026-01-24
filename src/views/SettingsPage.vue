@@ -1,14 +1,17 @@
 <template>
     <ion-page>
-        <ion-content :fullscreen="true">
-            <!-- Page Header -->
-            <div class="page-header">
-                <ion-button fill="clear" class="back-button" @click="$router.back()">
-                    <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
-                </ion-button>
-                <h1 class="page-title">Einstellungen</h1>
-            </div>
+        <ion-header :translucent="true">
+            <ion-toolbar>
+                <ion-buttons slot="start">
+                    <ion-button @click="$router.back()">
+                        <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
+                    </ion-button>
+                </ion-buttons>
+                <ion-title>Einstellungen</ion-title>
+            </ion-toolbar>
+        </ion-header>
 
+        <ion-content :fullscreen="true">
             <div class="content-container card-stack">
                 <!-- Account Card -->
                 <ion-card>
@@ -208,11 +211,13 @@ import { computed, onMounted, ref } from 'vue';
 
 import {
     IonButton,
+    IonButtons,
     IonCard,
     IonCardContent,
     IonCardHeader,
     IonCardTitle,
     IonContent,
+    IonHeader,
     IonIcon,
     IonItem,
     IonLabel,
@@ -221,6 +226,8 @@ import {
     IonRange,
     IonSelect,
     IonSelectOption,
+    IonTitle,
+    IonToolbar,
     alertController,
     toastController,
 } from '@ionic/vue';

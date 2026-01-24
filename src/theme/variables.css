@@ -74,13 +74,26 @@ ion-item.transparent {
     --background: transparent;
 }
 
+.header::after {
+    background-image: none;
+}
+
+/* ion-header {
+    --background: transparent;
+}
+
+ion-toolbar {
+    --background: transparent;
+    --border-width: 0;
+} */
+
 /* ============================================
    Layout Classes
    ============================================ */
 
 /* Auth page container (Login, Register, Password Reset) */
 .auth-container {
-    max-width: var(--container-sm);
+    /* max-width: var(--container-sm); */
     margin: 0 auto;
     padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
     min-height: 100vh;
@@ -351,6 +364,6 @@ ion-item.transparent {
    ============================================ */
 
 .mobile-container {
-    max-width: 600px;
+    max-width: var(--container-md);
     margin: 0 auto;
 }

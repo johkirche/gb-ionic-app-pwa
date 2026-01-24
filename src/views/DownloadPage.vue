@@ -1,14 +1,17 @@
 <template>
     <ion-page>
-        <ion-content :fullscreen="true">
-            <!-- Back button and title integrated into content -->
-            <div class="page-header">
-                <ion-button fill="clear" class="back-button" @click="$router.back()">
-                    <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
-                </ion-button>
-                <h1 class="page-title">Synchronisieren</h1>
-            </div>
+        <ion-header :translucent="true">
+            <ion-toolbar>
+                <ion-buttons slot="start">
+                    <ion-button @click="$router.back()">
+                        <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
+                    </ion-button>
+                </ion-buttons>
+                <ion-title>Synchronisieren</ion-title>
+            </ion-toolbar>
+        </ion-header>
 
+        <ion-content :fullscreen="true">
             <div class="content-container card-stack">
                 <!-- Sync Status Card -->
                 <ion-card>
@@ -168,11 +171,13 @@ import { computed, onMounted, ref } from 'vue';
 
 import {
     IonButton,
+    IonButtons,
     IonCard,
     IonCardContent,
     IonCardHeader,
     IonCardTitle,
     IonContent,
+    IonHeader,
     IonIcon,
     IonItem,
     IonLabel,
@@ -180,6 +185,8 @@ import {
     IonPage,
     IonProgressBar,
     IonSpinner,
+    IonTitle,
+    IonToolbar,
     alertController,
 } from '@ionic/vue';
 import {

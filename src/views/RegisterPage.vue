@@ -1,15 +1,6 @@
 <template>
     <ion-page>
         <ion-content :fullscreen="true">
-            <!-- Back button integrated into content -->
-            <ion-button
-                fill="clear"
-                class="back-button floating-button floating-button--top-left"
-                @click="handleBack"
-            >
-                <ion-icon slot="icon-only" :icon="arrowBackOutline"></ion-icon>
-            </ion-button>
-
             <div class="auth-container">
                 <!-- Step Indicator -->
                 <StepIndicator :current-step="currentStep" :total-steps="2" />
