@@ -134,12 +134,26 @@
         </div>
 
         <div class="step-actions">
-            <ion-button expand="block" :disabled="!canProceed" @click="$emit('next')">
+            <ion-button
+                v-if="props.mode === 'onboarding'"
+                expand="block"
+                :disabled="!canProceed"
+                @click="$emit('next')"
+            >
                 Weiter
                 <ion-icon slot="end" :icon="arrowForwardOutline"></ion-icon>
             </ion-button>
-            <ion-button expand="block" fill="clear" color="medium" @click="$emit('next')">
+            <ion-button
+                v-if="props.mode === 'onboarding'"
+                expand="block"
+                fill="clear"
+                color="medium"
+                @click="$emit('next')"
+            >
                 Überspringen
+            </ion-button>
+            <ion-button v-if="props.mode === 'standalone'" expand="block" @click="$emit('done')">
+                Fertig
             </ion-button>
         </div>
     </div>
@@ -162,10 +176,21 @@ import desktopInstallIcon from '@/assets/pwa-icons/pwa-desktop-install.png';
 
 import { usePWA } from '@/composables/usePWA';
 
+// Props
+const props = withDefaults(
+    defineProps<{
+        mode?: 'onboarding' | 'standalone';
+    }>(),
+    {
+        mode: 'onboarding',
+    },
+);
+
 // Emits
 defineEmits<{
     next: [];
     skip: [];
+    done: [];
 }>();
 
 // Use the PWA composable (listeners are initialized in main.ts)

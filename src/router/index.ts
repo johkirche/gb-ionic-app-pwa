@@ -7,6 +7,7 @@ import AddSongsToPlaylistPage from '../views/AddSongsToPlaylistPage.vue';
 import CreatePlaylistPage from '../views/CreatePlaylistPage.vue';
 import DownloadPage from '../views/DownloadPage.vue';
 import HomePage from '../views/HomePage.vue';
+import InstallPWAPage from '../views/InstallPWAPage.vue';
 import LoginPage from '../views/LoginPage.vue';
 import OnboardingPage from '../views/OnboardingPage.vue';
 import PasswordResetPage from '../views/PasswordResetPage.vue';
@@ -68,6 +69,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/download',
         name: 'Download',
         component: DownloadPage,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/install-pwa',
+        name: 'InstallPWA',
+        component: InstallPWAPage,
         meta: { requiresAuth: true },
     },
     {

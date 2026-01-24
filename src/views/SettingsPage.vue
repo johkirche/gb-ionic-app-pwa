@@ -114,16 +114,24 @@
                     </ion-card-header>
                     <ion-card-content>
                         <ion-list class="transparent" lines="full">
-                            <ion-item
-                                class="transparent"
-                                button
-                                lines="none"
-                                @click="navigateToDownload"
-                            >
+                            <ion-item class="transparent" button @click="navigateToDownload">
                                 <ion-icon :icon="cloudDownloadOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Heruntergeladene Inhalte</h3>
                                     <p>{{ songsCount }} Lieder, {{ filesCount }} Dateien</p>
+                                </ion-label>
+                                <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
+                            </ion-item>
+                            <ion-item
+                                class="transparent"
+                                button
+                                lines="none"
+                                @click="navigateToInstallPWA"
+                            >
+                                <ion-icon :icon="phonePortraitOutline" slot="start"></ion-icon>
+                                <ion-label>
+                                    <h3>App installieren</h3>
+                                    <p>Installiere die App auf deinem Gerät</p>
                                 </ion-label>
                                 <ion-icon :icon="chevronForwardOutline" slot="end"></ion-icon>
                             </ion-item>
@@ -227,6 +235,7 @@ import {
     mailOutline,
     musicalNoteOutline,
     personOutline,
+    phonePortraitOutline,
     shieldCheckmarkOutline,
     textOutline,
     trashOutline,
@@ -308,6 +317,10 @@ function applyTheme(theme: 'system' | 'light' | 'dark') {
 
 function navigateToDownload() {
     router.push('/download');
+}
+
+function navigateToInstallPWA() {
+    router.push('/install-pwa');
 }
 
 async function openEditNameModal() {
