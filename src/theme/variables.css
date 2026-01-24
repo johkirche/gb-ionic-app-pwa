@@ -93,10 +93,13 @@ ion-toolbar {
 
 /* Auth page container (Login, Register, Password Reset) */
 .auth-container {
-    /* max-width: var(--container-sm); */
+    max-width: var(--container-sm);
     margin: 0 auto;
     padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .auth-container--centered {
