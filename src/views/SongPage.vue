@@ -1,86 +1,26 @@
 <template>
     <ion-page>
-        <ion-header :translucent="true">
-            <ion-toolbar>
-                <ion-buttons slot="start">
-                    <ion-button @click="$router.back()">
-                        <ion-icon slot="icon-only" :icon="arrowBackOutline" />
-                    </ion-button>
-                </ion-buttons>
-                <ion-title v-if="song">Nr. {{ song.index }}</ion-title>
-                <ion-buttons slot="end">
-                    <ion-button id="song-menu-trigger">
-                        <ion-icon slot="icon-only" :icon="settingsOutline" />
-                    </ion-button>
-                </ion-buttons>
-            </ion-toolbar>
-        </ion-header>
+        <SongHeader :song-index="song?.index" />
 
-        <!-- Song Menu Popover -->
-        <ion-popover trigger="song-menu-trigger" :dismiss-on-select="false">
-            <ion-content class="menu-content">
-                <ion-list lines="none">
-                    <ion-list-header>
-                        <ion-label>Anzeige</ion-label>
-                    </ion-list-header>
-                    <ion-item>
-                        <ion-icon slot="start" :icon="musicalNotesOutline" />
-                        <ion-label>Steuerung anzeigen</ion-label>
-                        <ion-toggle
-                            slot="end"
-                            :checked="showControls"
-                            @ionChange="showControls = $event.detail.checked"
-                        />
-                    </ion-item>
-                    <ion-item v-if="hasMelody || hasMelodyImage">
-                        <ion-icon slot="start" :icon="imageOutline" />
-                        <ion-label>Notenbild anzeigen</ion-label>
-                        <ion-toggle
-                            slot="end"
-                            :checked="melodyDisplayMode === 'image'"
-                            :disabled="!hasMelodyImage"
-                            @ionChange="
-                                preferencesStore.setMelodyDisplayMode(
-                                    $event.detail.checked ? 'image' : 'abc',
-                                )
-                            "
-                        />
-                    </ion-item>
-                    <ion-item v-if="hasMelody && melodyDisplayMode === 'abc'">
-                        <ion-icon slot="start" :icon="musicalNoteOutline" />
-                        <ion-label>
-                            <p>Notengröße</p>
-                            <p class="scale-value">{{ Math.round(notationScale * 100) }}%</p>
-                        </ion-label>
-                        <ion-range
-                            slot="end"
-                            :min="0.5"
-                            :max="2.0"
-                            :step="0.1"
-                            :value="notationScale"
-                            :pin="true"
-                            :pin-formatter="(value: number) => `${Math.round(value * 100)}%`"
-                            @ionInput="updateNotationScale($event.detail.value)"
-                        />
-                    </ion-item>
-                </ion-list>
-            </ion-content>
-        </ion-popover>
+        <SongMenuPopover
+            v-model:show-controls="showControls"
+            :song-id="songId"
+            :has-melody="hasMelody"
+            :has-melody-image="hasMelodyImage"
+            :melody-display-mode="melodyDisplayMode"
+            :notation-scale="notationScale"
+            :song-font-size="textSize"
+            @update:melody-display-mode="preferencesStore.setMelodyDisplayMode($event)"
+            @update:notation-scale="updateNotationScale"
+            @update:song-font-size="preferencesStore.setTextSize($event)"
+        />
 
         <ion-content :fullscreen="true">
             <!-- Loading State -->
-            <div v-if="isLoading" class="state-container">
-                <ion-spinner name="crescent"></ion-spinner>
-                <p>Lied wird geladen...</p>
-            </div>
+            <SongLoadingState v-if="isLoading" />
 
             <!-- Error / Not Found State -->
-            <div v-else-if="!song" class="state-container empty-state">
-                <ion-icon :icon="alertCircleOutline" size="large"></ion-icon>
-                <h2>Lied nicht gefunden</h2>
-                <p>Das angeforderte Lied konnte nicht gefunden werden.</p>
-                <ion-button fill="outline" @click="$router.back()">Zurück</ion-button>
-            </div>
+            <SongErrorState v-else-if="!song" />
 
             <!-- Song Content -->
             <div v-else class="song-content" :class="`text-size-${textSize}`">
@@ -91,22 +31,11 @@
                 </h1>
 
                 <!-- Melody Display: Image or ABC Rendering -->
-                <div v-if="melodyDisplayMode === 'image' && hasMelodyImage" class="melody-section">
-                    <div v-if="imageLoading" class="image-loading">
-                        <ion-spinner name="crescent"></ion-spinner>
-                        <p>Notenbild wird geladen...</p>
-                    </div>
-                    <img
-                        v-else-if="melodyImageUrl"
-                        :src="melodyImageUrl"
-                        alt="Notenbild"
-                        class="melody-image"
-                    />
-                    <div v-else class="no-melody-notice">
-                        <ion-icon :icon="imageOutline" />
-                        <span>Notenbild nicht verfügbar</span>
-                    </div>
-                </div>
+                <SongMelodyImage
+                    v-if="melodyDisplayMode === 'image' && hasMelodyImage"
+                    :image-url="melodyImageUrl"
+                    :is-loading="imageLoading"
+                />
 
                 <!-- ABC Melody Rendering -->
                 <div v-else-if="melodyDisplayMode === 'abc' && hasMelody" class="melody-section">
@@ -121,44 +50,17 @@
                         @play-stopped="isPlaying = false"
                     />
 
-                    <!-- Audio Controls -->
-                    <div v-if="showControls" class="audio-controls">
-                        <ion-button
-                            fill="clear"
-                            size="small"
-                            :color="loopEnabled ? 'primary' : 'medium'"
-                            @click="loopEnabled = !loopEnabled"
-                        >
-                            <ion-icon slot="icon-only" :icon="repeatOutline" />
-                        </ion-button>
-
-                        <ion-button fill="solid" shape="round" color="primary" @click="togglePlay">
-                            <ion-icon
-                                slot="icon-only"
-                                :icon="isPlaying ? pauseOutline : playOutline"
-                            />
-                        </ion-button>
-
-                        <ion-button
-                            fill="clear"
-                            size="small"
-                            :color="hasPaused ? 'medium' : 'medium'"
-                            :disabled="!isPlaying && !hasPaused"
-                            @click="stopPlayback"
-                        >
-                            <ion-icon slot="icon-only" :icon="playSkipBackOutline" />
-                        </ion-button>
-
-                        <div class="tempo-control">
-                            <ion-button fill="clear" size="small" @click="decreaseTempo">
-                                <ion-icon slot="icon-only" :icon="removeOutline" />
-                            </ion-button>
-                            <span class="tempo-value">{{ tempo }} BPM</span>
-                            <ion-button fill="clear" size="small" @click="increaseTempo">
-                                <ion-icon slot="icon-only" :icon="addOutline" />
-                            </ion-button>
-                        </div>
-                    </div>
+                    <SongAudioControls
+                        v-if="showControls"
+                        v-model:loop-enabled="loopEnabled"
+                        :is-playing="isPlaying"
+                        :has-paused="hasPaused"
+                        :tempo="tempo"
+                        @toggle-play="togglePlay"
+                        @stop="stopPlayback"
+                        @increase-tempo="increaseTempo"
+                        @decrease-tempo="decreaseTempo"
+                    />
                 </div>
 
                 <!-- No Melody Notice -->
@@ -168,41 +70,13 @@
                 </div>
 
                 <!-- Song Verses -->
-                <div class="verses-section">
-                    <div v-for="(strophe, idx) in song.strophen" :key="idx" class="verse">
-                        <span class="verse-number">{{ idx + 1 }}.</span>
-                        <p
-                            class="verse-text"
-                            v-html="
-                                formatVerse(
-                                    typeof strophe.text === 'object'
-                                        ? strophe.text?.strophe
-                                        : strophe.text || strophe.strophe,
-                                )
-                            "
-                        ></p>
-                    </div>
-                </div>
+                <SongVerses :strophes="song.strophen" />
 
                 <!-- Authors Section -->
-                <div class="authors-section">
-                    <div v-if="song.textAutoren.length > 0" class="author-row">
-                        <ion-icon :icon="documentTextOutline" />
-                        <div class="author-info">
-                            <span class="author-label">Text:</span>
-                            <span class="author-names">{{ formatAuthors(song.textAutoren) }}</span>
-                        </div>
-                    </div>
-                    <div v-if="song.melodieAutoren.length > 0" class="author-row">
-                        <ion-icon :icon="musicalNoteOutline" />
-                        <div class="author-info">
-                            <span class="author-label">Melodie:</span>
-                            <span class="author-names">
-                                {{ formatAuthors(song.melodieAutoren) }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <SongAuthors
+                    :text-authors="song.textAutoren"
+                    :melody-authors="song.melodieAutoren"
+                />
             </div>
         </ion-content>
     </ion-page>
@@ -211,42 +85,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 
-import {
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonIcon,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonListHeader,
-    IonPage,
-    IonPopover,
-    IonRange,
-    IonSelect,
-    IonSelectOption,
-    IonSpinner,
-    IonTitle,
-    IonToggle,
-    IonToolbar,
-} from '@ionic/vue';
-import {
-    addOutline,
-    alertCircleOutline,
-    arrowBackOutline,
-    documentTextOutline,
-    imageOutline,
-    musicalNoteOutline,
-    musicalNotesOutline,
-    pauseOutline,
-    playOutline,
-    playSkipBackOutline,
-    removeOutline,
-    repeatOutline,
-    settingsOutline,
-    textOutline,
-} from 'ionicons/icons';
+import { IonContent, IonIcon, IonPage } from '@ionic/vue';
+import { musicalNotesOutline } from 'ionicons/icons';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
 
@@ -256,8 +96,16 @@ import { useSongsStore } from '@/stores/songs';
 import { useStoredFiles } from '@/composables/useStoredFiles';
 
 import AbcRenderer from '@/components/songview/AbcRenderer.vue';
+import SongAudioControls from '@/components/songview/SongAudioControls.vue';
+import SongAuthors from '@/components/songview/SongAuthors.vue';
+import SongErrorState from '@/components/songview/SongErrorState.vue';
+import SongHeader from '@/components/songview/SongHeader.vue';
+import SongLoadingState from '@/components/songview/SongLoadingState.vue';
+import SongMelodyImage from '@/components/songview/SongMelodyImage.vue';
+import SongMenuPopover from '@/components/songview/SongMenuPopover.vue';
+import SongVerses from '@/components/songview/SongVerses.vue';
 
-import type { Autor, Song } from '@/db';
+import type { Song } from '@/db';
 
 const route = useRoute();
 const songsStore = useSongsStore();
@@ -275,6 +123,9 @@ const abcRendererRef = ref<InstanceType<typeof AbcRenderer> | null>(null);
 
 // Current song
 const song = ref<Song | null>(null);
+
+// Song ID from route
+const songId = computed(() => route.params.id as string);
 
 // Playback state
 const isPlaying = ref(false);
@@ -440,24 +291,6 @@ function updateNotationScale(value: number | number[] | { lower: number; upper: 
     }
     preferencesStore.setNotationScale(scale);
 }
-
-// Format authors for display
-function formatAuthors(authors: Autor[]): string {
-    return authors
-        .map((a) => {
-            const name = `${a.vorname} ${a.nachname}`;
-            return a.sterbejahr ? `${name} (†${a.sterbejahr})` : name;
-        })
-        .join(', ');
-}
-
-// Format verse text (preserve line breaks)
-function formatVerse(text: string | null | undefined): string {
-    if (typeof text !== 'string') return '';
-    // remove ¬ from text
-    text = text.replace(/¬/g, '');
-    return text.replace(/\n/g, '<br>');
-}
 </script>
 
 <style scoped>
@@ -473,31 +306,6 @@ function formatVerse(text: string | null | undefined): string {
 .song-title-index {
     font-weight: 700;
     color: var(--ion-color-primary);
-}
-
-.state-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-    text-align: center;
-}
-
-.state-container ion-icon {
-    font-size: 64px;
-    color: var(--ion-color-medium);
-    margin-bottom: 16px;
-}
-
-.state-container h2 {
-    margin: 0 0 8px;
-    color: var(--ion-color-dark);
-}
-
-.state-container p {
-    margin: 0 0 16px;
-    color: var(--ion-color-medium);
 }
 
 .song-content {
@@ -522,6 +330,11 @@ function formatVerse(text: string | null | undefined): string {
     --verse-line-height: 1.7;
 }
 
+.song-content.text-size-xlarge {
+    --verse-font-size: var(--font-size-xl);
+    --verse-line-height: 1.8;
+}
+
 /* Melody Section */
 .melody-section {
     background: var(--ion-color-light);
@@ -529,33 +342,6 @@ function formatVerse(text: string | null | undefined): string {
     padding: var(--spacing-sm);
     margin-bottom: var(--spacing-lg);
     overflow-x: auto;
-}
-
-/* Audio Controls */
-.audio-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-md);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--ion-color-medium-tint);
-    margin-top: var(--spacing-md);
-    margin-left: calc(var(--spacing-sm) * -1);
-    margin-right: calc(var(--spacing-sm) * -1);
-}
-
-.tempo-control {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.tempo-value {
-    min-width: 40px;
-    text-align: center;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--ion-color-medium);
 }
 
 .no-melody-notice {
@@ -573,127 +359,5 @@ function formatVerse(text: string | null | undefined): string {
 
 .no-melody-notice ion-icon {
     font-size: 20px;
-}
-
-/* Melody Image */
-.melody-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    border-radius: var(--radius-md);
-}
-
-.image-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: var(--spacing-xl);
-    text-align: center;
-    gap: var(--spacing-sm);
-}
-
-.image-loading p {
-    margin: 0;
-    color: var(--ion-color-medium);
-    font-size: var(--font-size-sm);
-}
-
-/* Verses Section */
-.verses-section {
-    margin-bottom: var(--spacing-xl);
-}
-
-.verse {
-    display: flex;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-}
-
-.verse-number {
-    flex-shrink: 0;
-    font-weight: 600;
-    color: var(--ion-color-primary);
-    min-width: 24px;
-    font-size: var(--verse-font-size, var(--font-size-base));
-}
-
-.verse-text {
-    margin: 0;
-    font-size: var(--verse-font-size, var(--font-size-base));
-    line-height: var(--verse-line-height, 1.6);
-    color: var(--ion-color-dark);
-}
-
-/* Authors Section */
-.authors-section {
-    border-top: 1px solid var(--ion-color-light-shade);
-    padding-top: var(--spacing-lg);
-    margin-top: var(--spacing-lg);
-}
-
-.author-row {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
-    color: var(--ion-color-medium);
-}
-
-.author-row ion-icon {
-    flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 18px;
-}
-
-.author-info {
-    display: flex;
-    flex-wrap: wrap;
-    padding-top: 4px;
-    gap: var(--spacing-xs);
-}
-
-.author-label {
-    font-weight: 500;
-}
-
-.author-names {
-    color: var(--ion-color-dark);
-}
-
-/* Menu popover styles */
-ion-popover {
-    --width: 280px;
-}
-
-ion-popover ion-list-header {
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding-top: var(--spacing-sm);
-    padding-bottom: var(--spacing-sm);
-}
-
-ion-popover ion-item {
-    --padding-start: var(--spacing-md);
-    --padding-end: var(--spacing-md);
-    --inner-padding-end: 0;
-}
-
-.scale-value {
-    font-size: 0.85rem;
-    color: var(--ion-color-primary);
-    font-weight: 500;
-}
-
-ion-popover ion-range {
-    --bar-background: var(--ion-color-light);
-    --bar-background-active: var(--ion-color-primary);
-    --knob-background: var(--ion-color-primary);
-    --knob-size: 20px;
-    --pin-background: var(--ion-color-primary);
-    padding: 0 8px;
-    width: 120px;
 }
 </style>

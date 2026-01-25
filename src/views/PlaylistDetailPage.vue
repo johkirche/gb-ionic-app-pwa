@@ -63,11 +63,20 @@
                 />
 
                 <!-- Empty Playlist State -->
-                <div v-if="songs.length === 0" class="state-container empty-state">
-                    <ion-icon :icon="musicalNotesOutline" size="large"></ion-icon>
+                <div v-if="songs.length === 0" class="empty-playlist-state empty-state">
+                    <ion-icon
+                        class="playlist-icon"
+                        :icon="musicalNotesOutline"
+                        size="large"
+                    ></ion-icon>
                     <h2>Keine Lieder</h2>
                     <p>Fügen Sie Lieder zu dieser Playlist hinzu.</p>
-                    <ion-button @click="navigateToAddSongs">
+                    <ion-button
+                        class="add-button"
+                        size="default"
+                        fill="solid"
+                        @click="navigateToAddSongs"
+                    >
                         <ion-icon slot="start" :icon="addOutline"></ion-icon>
                         Lieder hinzufügen
                     </ion-button>
@@ -295,6 +304,7 @@ function navigateToSong(songId: string) {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    min-height: 100%;
     padding: 48px 24px;
     text-align: center;
 }
@@ -315,7 +325,44 @@ function navigateToSong(songId: string) {
     color: var(--ion-color-medium);
 }
 
-.empty-state ion-button {
-    margin-top: 8px;
+.empty-playlist-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    text-align: center;
+}
+
+.empty-playlist-state .playlist-icon {
+    font-size: 64px;
+    color: var(--ion-color-medium);
+    margin-bottom: 16px;
+}
+
+.empty-playlist-state h2 {
+    margin: 0 0 8px;
+    color: var(--ion-color-dark);
+}
+
+.empty-playlist-state p {
+    margin: 0 0 16px;
+    color: var(--ion-color-medium);
+}
+
+.empty-state .add-button {
+    margin-top: 24px;
+    --padding-start: 24px;
+    --padding-end: 24px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0.5px;
+}
+
+.empty-state .add-button ion-icon {
+    color: white;
+    margin-right: 8px;
+    font-size: 20px;
 }
 </style>

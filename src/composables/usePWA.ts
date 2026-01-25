@@ -3,8 +3,22 @@ import { computed, ref } from 'vue';
 // Store the deferred prompt globally so it persists across component instances
 let deferredPrompt: any = null;
 const canInstallRef = ref(false);
-const isInstalledRef = ref(false);
+const isStandaloneRef = ref(false);
+// Heuristic: if beforeinstallprompt doesn't fire after a delay, we suspect the app is installed
+const isSuspectedInstalledRef = ref(false);
+// Loading state while checking installation status
+const isCheckingInstallRef = ref(true);
 let isListening = false;
+let beforeInstallPromptFired = false;
+
+// Check if running in standalone/PWA mode
+function checkStandaloneMode(): boolean {
+    return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes('android-app://')
+    );
+}
 
 export function usePWA() {
     // Platform detection
@@ -18,19 +32,14 @@ export function usePWA() {
         return /android/.test(userAgent);
     });
 
-    const isStandalone = computed(() => {
-        return (
-            window.matchMedia('(display-mode: standalone)').matches ||
-            (window.navigator as any).standalone === true ||
-            document.referrer.includes('android-app://')
-        );
-    });
+    // Use the reactive ref for standalone detection
+    const isStandalone = computed(() => isStandaloneRef.value);
 
-    const canInstall = computed(() => canInstallRef.value && !isStandalone.value);
+    const canInstall = computed(() => canInstallRef.value && !isStandaloneRef.value);
 
     // Check if install button should be shown (Android/Desktop with prompt, or iOS with instructions)
     const showInstallButton = computed(() => {
-        return canInstallRef.value && !isStandalone.value;
+        return canInstallRef.value && !isStandaloneRef.value;
     });
 
     // Initialize listeners (call once in main.ts or App.vue)
@@ -41,27 +50,29 @@ export function usePWA() {
         console.log('PWA: Initializing listeners');
         console.log('PWA: User Agent', navigator.userAgent);
 
-        const isStandaloneMatch = window.matchMedia('(display-mode: standalone)').matches;
-        const isNavigatorStandalone = (window.navigator as any).standalone === true;
-        const isReferrerAndroidAction = document.referrer.includes('android-app://');
+        // Check standalone mode
+        const standalone = checkStandaloneMode();
+        isStandaloneRef.value = standalone;
+        console.log('PWA: Standalone mode:', standalone);
 
-        console.log('PWA: Standalone check:', {
-            matchMedia: isStandaloneMatch,
-            navigatorStandalone: isNavigatorStandalone,
-            referrer: isReferrerAndroidAction,
+        // Listen for display mode changes (e.g., when switching between browser and PWA)
+        const standaloneMediaQuery = window.matchMedia('(display-mode: standalone)');
+        standaloneMediaQuery.addEventListener('change', (e) => {
+            console.log('PWA: Display mode changed, standalone:', e.matches);
+            isStandaloneRef.value = e.matches;
         });
-
-        // Check if already installed
-        isInstalledRef.value = isStandaloneMatch || isNavigatorStandalone;
-        console.log('PWA: isInstalledRef initialized to:', isInstalledRef.value);
 
         // Capture the beforeinstallprompt event
         window.addEventListener('beforeinstallprompt', (e: Event) => {
             console.log('PWA: beforeinstallprompt fired');
+            beforeInstallPromptFired = true;
+            isCheckingInstallRef.value = false;
             e.preventDefault();
             deferredPrompt = e;
             canInstallRef.value = true;
-            console.log('PWA: canInstallRef set to true');
+            // If beforeinstallprompt fires, the app is definitely NOT installed
+            isSuspectedInstalledRef.value = false;
+            console.log('PWA: canInstallRef set to true, app is NOT installed');
         });
 
         // Handle successful installation
@@ -69,8 +80,19 @@ export function usePWA() {
             console.log('PWA: appinstalled fired');
             deferredPrompt = null;
             canInstallRef.value = false;
-            isInstalledRef.value = true;
+            isSuspectedInstalledRef.value = false; // Now we know for sure, no need to suspect
+            beforeInstallPromptFired = false;
         });
+
+        // After a delay, if beforeinstallprompt hasn't fired (and we're not on iOS),
+        // we suspect the app might be installed
+        setTimeout(() => {
+            isCheckingInstallRef.value = false;
+            if (!beforeInstallPromptFired && !isStandaloneRef.value && !isIOS.value) {
+                console.log('PWA: No install prompt after delay, suspecting app is installed');
+                isSuspectedInstalledRef.value = true;
+            }
+        }, 1500);
     }
 
     // Trigger the install prompt
@@ -101,7 +123,8 @@ export function usePWA() {
         isStandalone,
         canInstall,
         showInstallButton,
-        isInstalled: isInstalledRef,
+        isSuspectedInstalled: isSuspectedInstalledRef,
+        isCheckingInstall: isCheckingInstallRef,
         initPWAListeners,
         installPWA,
     };

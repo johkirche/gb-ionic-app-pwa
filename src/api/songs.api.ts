@@ -4,6 +4,7 @@ import { refreshAuthToken } from '@/composables/useAuth';
 
 import type { Autor, Category, NotenFile, Song } from '@/db';
 import { directusClient } from '@/services/directus';
+import { handleApiError } from '@/services/errorHandler';
 
 /**
  * Songs API
@@ -158,6 +159,12 @@ export async function fetchSongs(): Promise<Song[]> {
 
         return response.gesangbuchlied.map((song, index) => transformSong(song, index + 1));
     } catch (error) {
+        // Check for invalid credentials first (user account may be deleted)
+        const handled = await handleApiError(error);
+        if (handled) {
+            throw new Error('Invalid credentials - user logged out');
+        }
+
         // If unauthorized, try to refresh token and retry
         if (error instanceof Error && error.message.includes('401')) {
             const refreshed = await refreshAuthToken();

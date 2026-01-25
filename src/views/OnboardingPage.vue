@@ -3,7 +3,11 @@
         <ion-content :fullscreen="true">
             <div class="onboarding-container">
                 <!-- Step Indicator Dots -->
-                <StepIndicator :current-step="currentStep" :total-steps="totalSteps" />
+                <StepIndicator
+                    :current-step="currentStep"
+                    :total-steps="totalSteps"
+                    @back="prevStep"
+                />
 
                 <!-- Step 1: Install PWA -->
                 <InstallPWAStep v-if="currentStep === 1" @next="nextStep" @skip="skipOnboarding" />
@@ -54,6 +58,12 @@ const downloadComplete = ref(false);
 function nextStep() {
     if (currentStep.value < totalSteps) {
         currentStep.value++;
+    }
+}
+
+function prevStep() {
+    if (currentStep.value > 1) {
+        currentStep.value--;
     }
 }
 

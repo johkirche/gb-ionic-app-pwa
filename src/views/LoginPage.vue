@@ -8,6 +8,14 @@
                     <p class="text-muted">Melden Sie sich an, um fortzufahren</p>
                 </div>
 
+                <!-- Show logout reason message if present -->
+                <div v-if="logoutMessage" class="info-banner ion-margin-bottom">
+                    <ion-icon :icon="informationCircle"></ion-icon>
+                    <ion-text>
+                        <strong>{{ logoutMessage }}</strong>
+                    </ion-text>
+                </div>
+
                 <form @submit.prevent="handleLogin">
                     <div class="form-stack">
                         <ion-input
@@ -93,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import {
     IonButton,
@@ -105,14 +113,17 @@ import {
     IonSpinner,
     IonText,
 } from '@ionic/vue';
-import { alertCircle } from 'ionicons/icons';
-import { useRouter } from 'vue-router';
+import { alertCircle, informationCircle } from 'ionicons/icons';
+import { useRoute, useRouter } from 'vue-router';
 
 import { useSongsStore } from '@/stores/songs';
 
 import { useAuth } from '@/composables/useAuth';
 
+import { LOGOUT_REASON_MESSAGES, type LogoutReason } from '@/services/errorHandler';
+
 const router = useRouter();
+const route = useRoute();
 const { login, setSkipAuth, isLoading, error } = useAuth();
 const songsStore = useSongsStore();
 
@@ -121,6 +132,25 @@ const password = ref('');
 
 // Show dev skip button only if env var is set
 const showDevSkip = import.meta.env.VITE_SHOW_DEV_SKIP === 'true';
+
+// Get logout reason from query parameter
+const logoutMessage = computed(() => {
+    const reason = route.query.reason as LogoutReason | undefined;
+    if (reason && LOGOUT_REASON_MESSAGES[reason]) {
+        return LOGOUT_REASON_MESSAGES[reason];
+    }
+    return null;
+});
+
+// Clear the reason from URL after displaying (optional, for cleaner URL)
+onMounted(() => {
+    if (route.query.reason) {
+        // Remove the reason from URL after a short delay to avoid flash
+        setTimeout(() => {
+            router.replace({ path: '/login', query: {} });
+        }, 100);
+    }
+});
 
 async function handleLogin() {
     if (!email.value || !password.value) {
@@ -149,6 +179,27 @@ async function handleSkip() {
 </script>
 
 <style scoped>
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(var(--ion-color-warning-rgb), 0.15);
+    border-left: 4px solid var(--ion-color-warning);
+    border-radius: 8px;
+}
+
+.info-banner ion-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    color: var(--ion-color-warning-shade);
+}
+
+.info-banner ion-text {
+    flex: 1;
+    color: var(--ion-text-color);
+}
+
 .error-banner {
     display: flex;
     align-items: center;

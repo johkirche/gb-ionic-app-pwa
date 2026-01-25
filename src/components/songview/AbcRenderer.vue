@@ -297,6 +297,21 @@ async function resumePlayback() {
     }
 }
 
+function removeHighlighting() {
+    const highlighted = notationRef.value?.querySelectorAll('.abcjs-note_selected');
+    highlighted?.forEach((el: Element) => {
+        el.classList.remove('abcjs-note_selected');
+    });
+
+    const cursor = notationRef.value?.querySelector('.abcjs-cursor');
+    if (cursor) {
+        cursor.setAttributeNS(null, 'x1', '0');
+        cursor.setAttributeNS(null, 'x2', '0');
+        cursor.setAttributeNS(null, 'y1', '0');
+        cursor.setAttributeNS(null, 'y2', '0');
+    }
+}
+
 // Stop playback
 function stopPlayback() {
     console.log('[ABC Debug] stopPlayback called');
@@ -310,18 +325,7 @@ function stopPlayback() {
     }
 
     // Remove highlighting and reset cursor
-    const highlighted = notationRef.value?.querySelectorAll('.abcjs-note_selected');
-    highlighted?.forEach((el: Element) => {
-        el.classList.remove('abcjs-note_selected');
-    });
-
-    const cursor = notationRef.value?.querySelector('.abcjs-cursor');
-    if (cursor) {
-        cursor.setAttributeNS(null, 'x1', '0');
-        cursor.setAttributeNS(null, 'x2', '0');
-        cursor.setAttributeNS(null, 'y1', '0');
-        cursor.setAttributeNS(null, 'y2', '0');
-    }
+    removeHighlighting();
 
     // Reset state
     isAudioPrimed = false;
@@ -371,9 +375,28 @@ watch(
         });
         // Tempo changes require restarting the synth with new settings
         if ((props.isPlaying || isPaused) && (createSynth || timingCallbacks)) {
-            console.log('[ABC Debug] Tempo changed, restarting with new tempo');
+            console.log('[ABC Debug] Tempo changed, stopping and restarting with new tempo');
             const wasPlaying = props.isPlaying;
-            stopPlayback();
+
+            // Stop the current playback without emitting playStopped event
+            // to avoid changing parent's isPlaying state
+            if (createSynth) {
+                createSynth.stop();
+            }
+            if (timingCallbacks) {
+                timingCallbacks.stop();
+            }
+
+            // Remove highlighting and reset cursor
+            removeHighlighting();
+
+            // Reset internal state
+            isAudioPrimed = false;
+            isPaused = false;
+            createSynth = null;
+            timingCallbacks = null;
+
+            // Restart playback if it was playing
             if (wasPlaying) {
                 await startPlayback();
             }

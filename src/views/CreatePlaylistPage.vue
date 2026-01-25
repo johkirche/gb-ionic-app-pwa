@@ -215,6 +215,9 @@ async function createPlaylist() {
         console.error('Failed to create playlist:', error);
     }
 }
+
+// randomize the selected emoji on load
+selectedEmoji.value = commonEmojis[Math.floor(Math.random() * commonEmojis.length)];
 </script>
 
 <style scoped>

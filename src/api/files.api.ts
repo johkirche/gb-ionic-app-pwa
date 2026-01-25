@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/user';
 import { refreshAuthToken } from '@/composables/useAuth';
 
 import { directusConfig } from '@/services/directus';
+import { handleApiError } from '@/services/errorHandler';
 
 /**
  * Files API
@@ -62,6 +63,13 @@ export async function fetchFile(fileId: string): Promise<Blob> {
         return await response.blob();
     } catch (error) {
         console.error('Error fetching file from Directus:', error);
+
+        // Check for invalid credentials (user account may be deleted)
+        const handled = await handleApiError(error);
+        if (handled) {
+            throw new Error('Invalid credentials - user logged out');
+        }
+
         throw error;
     }
 }

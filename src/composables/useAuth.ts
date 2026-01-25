@@ -6,6 +6,7 @@ import { useUserStore } from '@/stores/user';
 
 import type { UserData } from '@/db';
 import { directusClient } from '@/services/directus';
+import { handleApiError, isInvalidCredentialsError } from '@/services/errorHandler';
 
 /**
  * Refresh auth token - exported separately for use in API modules
@@ -35,6 +36,13 @@ export async function refreshAuthToken(): Promise<boolean> {
         return false;
     } catch (error) {
         console.error('Error refreshing token:', error);
+
+        // Check for invalid credentials error (user account deleted)
+        if (isInvalidCredentialsError(error)) {
+            await handleApiError(error);
+            return false;
+        }
+
         return false;
     }
 }

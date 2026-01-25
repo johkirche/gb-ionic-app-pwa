@@ -10,12 +10,31 @@
             Offline-Nutzung.
         </p>
 
+        <!-- Definitely installed: running in standalone/PWA mode -->
         <div class="already-installed" v-if="isStandalone">
-            <ion-icon :icon="checkmarkCircleOutline" color="success"></ion-icon>
-            <span>App ist bereits installiert</span>
+            <div>
+                <ion-icon :icon="checkmarkCircleOutline" color="success"></ion-icon>
+                <span>App ist bereits installiert</span>
+            </div>
+        </div>
+
+        <!-- Loading: checking installation status -->
+        <div class="checking-install" v-else-if="isCheckingInstall">
+            <ion-spinner name="crescent"></ion-spinner>
+            <span>Prüfe Installationsstatus...</span>
         </div>
 
         <template v-else>
+            <!-- Heuristic: we suspect the app might be installed -->
+            <div class="suspected-installed" v-if="isSuspectedInstalled">
+                <div>
+                    <ion-icon :icon="informationCircleOutline" color="primary"></ion-icon>
+                    <span>Die App scheint bereits installiert zu sein</span>
+                </div>
+                <p class="suspected-hint">
+                    Öffnen Sie die App vom Home-Bildschirm oder installieren Sie sie erneut:
+                </p>
+            </div>
             <!-- Install Action (Android/Desktop only, if prompt is available) -->
             <div v-if="showInstallAction" class="install-action">
                 <ion-button expand="block" @click="installPWA" class="install-button">
@@ -162,13 +181,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import { IonButton, IonIcon } from '@ionic/vue';
+import { IonButton, IonIcon, IonSpinner } from '@ionic/vue';
 import {
     addOutline,
     arrowForwardOutline,
     checkmarkCircleOutline,
     downloadOutline,
     ellipsisVertical,
+    informationCircleOutline,
     shareOutline,
 } from 'ionicons/icons';
 
@@ -194,7 +214,15 @@ defineEmits<{
 }>();
 
 // Use the PWA composable (listeners are initialized in main.ts)
-const { isIOS, isAndroid, isStandalone, canInstall, installPWA, isInstalled } = usePWA();
+const {
+    isIOS,
+    isAndroid,
+    isStandalone,
+    canInstall,
+    installPWA,
+    isSuspectedInstalled,
+    isCheckingInstall,
+} = usePWA();
 
 const isDev = import.meta.env.DEV;
 const previewDevice = ref<'auto' | 'ios' | 'android' | 'desktop'>('auto');
@@ -212,7 +240,7 @@ const installButtonLabel = computed(() =>
     isAndroidView.value ? 'Jetzt installieren' : 'App installieren',
 );
 
-const canProceed = computed(() => isStandalone.value || isInstalled.value);
+const canProceed = computed(() => isStandalone.value || isSuspectedInstalled.value);
 
 const previewDeviceLabel = computed(() => {
     switch (previewDevice.value) {
@@ -399,22 +427,87 @@ function cyclePreviewDevice() {
 
 .already-installed {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background: rgba(var(--ion-color-success-rgb), 0.1);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.already-installed > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.already-installed ion-icon {
+    font-size: 1.5rem;
+}
+
+.already-installed span {
+    color: var(--ion-color-success);
+    font-weight: 500;
+}
+
+/* Checking install status */
+.checking-install {
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--spacing-sm);
     padding: var(--spacing-md);
-    background: var(--ion-color-success-tint);
+    background: var(--ion-color-light);
     border-radius: var(--radius-md);
     margin-bottom: var(--spacing-lg);
 }
 
-.already-installed ion-icon {
-    font-size: 1.25rem;
+.checking-install ion-spinner {
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
-.already-installed span {
-    color: var(--ion-color-success-shade);
+.checking-install span {
+    color: var(--ion-color-medium);
     font-weight: 500;
+}
+
+/* Suspected installed hint box */
+.suspected-installed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-lg);
+    background: rgba(var(--ion-color-primary-rgb), 0.1);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.suspected-installed > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.suspected-installed ion-icon {
+    font-size: 1.5rem;
+}
+
+.suspected-installed span {
+    color: var(--ion-color-primary);
+    font-weight: 500;
+}
+
+.suspected-installed .suspected-hint {
+    margin: 0;
+    color: var(--ion-color-primary);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    opacity: 0.8;
 }
 
 /* Step Actions */
