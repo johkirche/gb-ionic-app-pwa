@@ -32,7 +32,21 @@
                             @ionChange="showControls = $event.detail.checked"
                         />
                     </ion-item>
-                    <ion-item v-if="hasMelody">
+                    <ion-item v-if="hasMelody || hasMelodyImage">
+                        <ion-icon slot="start" :icon="imageOutline" />
+                        <ion-label>Notenbild anzeigen</ion-label>
+                        <ion-toggle
+                            slot="end"
+                            :checked="melodyDisplayMode === 'image'"
+                            :disabled="!hasMelodyImage"
+                            @ionChange="
+                                preferencesStore.setMelodyDisplayMode(
+                                    $event.detail.checked ? 'image' : 'abc',
+                                )
+                            "
+                        />
+                    </ion-item>
+                    <ion-item v-if="hasMelody && melodyDisplayMode === 'abc'">
                         <ion-icon slot="start" :icon="musicalNoteOutline" />
                         <ion-label>
                             <p>Notengröße</p>
@@ -76,8 +90,26 @@
                     {{ song.titel }}
                 </h1>
 
+                <!-- Melody Display: Image or ABC Rendering -->
+                <div v-if="melodyDisplayMode === 'image' && hasMelodyImage" class="melody-section">
+                    <div v-if="imageLoading" class="image-loading">
+                        <ion-spinner name="crescent"></ion-spinner>
+                        <p>Notenbild wird geladen...</p>
+                    </div>
+                    <img
+                        v-else-if="melodyImageUrl"
+                        :src="melodyImageUrl"
+                        alt="Notenbild"
+                        class="melody-image"
+                    />
+                    <div v-else class="no-melody-notice">
+                        <ion-icon :icon="imageOutline" />
+                        <span>Notenbild nicht verfügbar</span>
+                    </div>
+                </div>
+
                 <!-- ABC Melody Rendering -->
-                <div v-if="hasMelody" class="melody-section">
+                <div v-else-if="melodyDisplayMode === 'abc' && hasMelody" class="melody-section">
                     <AbcRenderer
                         ref="abcRendererRef"
                         :abc="defaultMelodyAbc"
@@ -130,7 +162,7 @@
                 </div>
 
                 <!-- No Melody Notice -->
-                <div v-else-if="!hasMelody" class="no-melody-notice">
+                <div v-else-if="!hasMelody && !hasMelodyImage" class="no-melody-notice">
                     <ion-icon :icon="musicalNotesOutline" />
                     <span>Keine Melodie verfügbar</span>
                 </div>
@@ -204,6 +236,7 @@ import {
     alertCircleOutline,
     arrowBackOutline,
     documentTextOutline,
+    imageOutline,
     musicalNoteOutline,
     musicalNotesOutline,
     pauseOutline,
@@ -220,6 +253,8 @@ import { useRoute } from 'vue-router';
 import { usePreferencesStore } from '@/stores/preferences';
 import { useSongsStore } from '@/stores/songs';
 
+import { useStoredFiles } from '@/composables/useStoredFiles';
+
 import AbcRenderer from '@/components/songview/AbcRenderer.vue';
 
 import type { Autor, Song } from '@/db';
@@ -229,7 +264,11 @@ const songsStore = useSongsStore();
 const { songs, isLoading } = storeToRefs(songsStore);
 
 const preferencesStore = usePreferencesStore();
-const { notationScale, textSize } = storeToRefs(preferencesStore);
+const { notationScale, textSize, melodyDisplayMode } = storeToRefs(preferencesStore);
+
+const { getFileUrl } = useStoredFiles();
+const melodyImageUrl = ref<string | null>(null);
+const imageLoading = ref(false);
 
 // Refs
 const abcRendererRef = ref<InstanceType<typeof AbcRenderer> | null>(null);
@@ -272,11 +311,63 @@ const hasMelody = computed(() => {
     return defaultMelodyAbc.value.trim().length > 0;
 });
 
+// Get the default melody image file ID
+const defaultMelodyImageId = computed(() => {
+    const melodies = song.value?.melodieAbc;
+    if (!Array.isArray(melodies) || melodies.length === 0) return null;
+    // Find default melody or use first one
+    const defaultMelody = melodies.find((m) => m.is_default) || melodies[0];
+    return defaultMelody?.file_id || null;
+});
+
+// Check if song has melody image
+const hasMelodyImage = computed(() => {
+    if (!song.value?.noten || song.value.noten.length === 0) return false;
+    // Check if there are any PNG/JPG/SVG files
+    return song.value.noten.some((note) => {
+        const filename = note.filename_download.toLowerCase();
+        return filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.svg');
+    });
+});
+
+// Load melody image from stored files
+async function loadMelodyImage() {
+    if (!song.value?.noten || song.value.noten.length === 0) {
+        melodyImageUrl.value = null;
+        return;
+    }
+
+    imageLoading.value = true;
+    try {
+        // Find the first PNG/JPG/SVG file
+        const imageFile = song.value.noten.find((note) => {
+            const filename = note.filename_download.toLowerCase();
+            return (
+                filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.svg')
+            );
+        });
+
+        if (imageFile) {
+            const url = await getFileUrl(imageFile.id);
+            melodyImageUrl.value = url;
+        } else {
+            melodyImageUrl.value = null;
+        }
+    } catch (err) {
+        console.error('Error loading melody image:', err);
+        melodyImageUrl.value = null;
+    } finally {
+        imageLoading.value = false;
+    }
+}
+
 // Find song by ID
 function loadSong() {
     const songId = route.params.id as string;
     if (songId) {
         song.value = songs.value.find((s) => s.id === songId) || null;
+        // Load melody image when song is loaded
+        loadMelodyImage();
     }
     console.log('Loaded song:', song.value);
 }
@@ -302,6 +393,13 @@ watch(
         }
     },
 );
+
+// Reload image when display mode changes
+watch(melodyDisplayMode, () => {
+    if (melodyDisplayMode.value === 'image') {
+        loadMelodyImage();
+    }
+});
 
 // Toggle play/pause
 function togglePlay() {
@@ -475,6 +573,30 @@ function formatVerse(text: string | null | undefined): string {
 
 .no-melody-notice ion-icon {
     font-size: 20px;
+}
+
+/* Melody Image */
+.melody-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: var(--radius-md);
+}
+
+.image-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    text-align: center;
+    gap: var(--spacing-sm);
+}
+
+.image-loading p {
+    margin: 0;
+    color: var(--ion-color-medium);
+    font-size: var(--font-size-sm);
 }
 
 /* Verses Section */

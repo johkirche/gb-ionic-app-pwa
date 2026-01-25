@@ -91,6 +91,7 @@ export interface PreferencesData {
     id: string;
     notationScale: number;
     textSize: 'small' | 'medium' | 'large' | 'xlarge';
+    melodyDisplayMode: 'abc' | 'image';
 }
 
 // Dexie database class

@@ -85,6 +85,15 @@
                             </ion-item>
 
                             <ion-item class="transparent">
+                                <ion-icon :icon="imageOutline" slot="start"></ion-icon>
+                                <ion-label>Notenansicht</ion-label>
+                                <ion-select v-model="melodyDisplayMode">
+                                    <ion-select-option value="abc">ABC Notation</ion-select-option>
+                                    <ion-select-option value="image">Notenbild</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+
+                            <ion-item class="transparent">
                                 <ion-icon :icon="musicalNoteOutline" slot="start"></ion-icon>
                                 <ion-label>
                                     <h3>Notengröße</h3>
@@ -237,6 +246,7 @@ import {
     cloudDownloadOutline,
     contrastOutline,
     createOutline,
+    imageOutline,
     informationCircleOutline,
     logOutOutline,
     mailOutline,
@@ -271,6 +281,10 @@ const songFontSize = computed({
 const notationScale = computed({
     get: () => preferencesStore.notationScale,
     set: (value) => preferencesStore.setNotationScale(value),
+});
+const melodyDisplayMode = computed({
+    get: () => preferencesStore.melodyDisplayMode,
+    set: (value) => preferencesStore.setMelodyDisplayMode(value),
 });
 
 // Data counts

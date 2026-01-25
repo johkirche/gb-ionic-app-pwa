@@ -8,12 +8,14 @@ export interface PreferencesData {
     id: string;
     notationScale: number; // Scale factor for ABC notation (0.5 - 2.0)
     textSize: 'small' | 'medium' | 'large' | 'xlarge'; // Text size for song lyrics
+    melodyDisplayMode: 'abc' | 'image'; // Display mode for melody (ABC notation vs downloaded image)
 }
 
 export const usePreferencesStore = defineStore('preferences', () => {
     // State
     const notationScale = ref<number>(1.0); // Default scale
     const textSize = ref<'small' | 'medium' | 'large' | 'xlarge'>('medium'); // Default text size
+    const melodyDisplayMode = ref<'abc' | 'image'>('abc'); // Default to ABC notation
     const isLoading = ref(false);
 
     // Actions
@@ -26,6 +28,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
             if (prefs) {
                 notationScale.value = prefs.notationScale;
                 textSize.value = prefs.textSize;
+                melodyDisplayMode.value = prefs.melodyDisplayMode || 'abc';
             }
         } catch (err) {
             console.error('Error loading preferences:', err);
@@ -46,6 +49,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
                 id: 'default',
                 notationScale: clampedScale,
                 textSize: current?.textSize || textSize.value,
+                melodyDisplayMode: current?.melodyDisplayMode || melodyDisplayMode.value,
             });
         } catch (err) {
             console.error('Error saving notation scale:', err);
@@ -63,9 +67,28 @@ export const usePreferencesStore = defineStore('preferences', () => {
                 id: 'default',
                 notationScale: current?.notationScale || notationScale.value,
                 textSize: size,
+                melodyDisplayMode: current?.melodyDisplayMode || melodyDisplayMode.value,
             });
         } catch (err) {
             console.error('Error saving text size:', err);
+            throw err;
+        }
+    }
+
+    async function setMelodyDisplayMode(mode: 'abc' | 'image') {
+        try {
+            melodyDisplayMode.value = mode;
+
+            // Get current preferences and update
+            const current = await db.preferences.get('default');
+            await db.preferences.put({
+                id: 'default',
+                notationScale: current?.notationScale || notationScale.value,
+                textSize: current?.textSize || textSize.value,
+                melodyDisplayMode: mode,
+            });
+        } catch (err) {
+            console.error('Error saving melody display mode:', err);
             throw err;
         }
     }
@@ -77,12 +100,14 @@ export const usePreferencesStore = defineStore('preferences', () => {
         // State
         notationScale,
         textSize,
+        melodyDisplayMode,
         isLoading,
 
         // Actions
         loadPreferences,
         setNotationScale,
         setTextSize,
+        setMelodyDisplayMode,
 
         // Initialization promise
         initPromise,

@@ -114,7 +114,13 @@
                                 <span v-if="sortMode === 'index'" class="song-index">
                                     {{ song.index }}.
                                 </span>
-                                {{ song.titel }}
+                                <span class="song-title-text">{{ song.titel }}</span>
+                                <span v-if="hasAbcNotation(song)" class="song-tag abc-tag">
+                                    ABC
+                                </span>
+                                <span v-if="hasImageFile(song)" class="song-tag image-tag">
+                                    Bild
+                                </span>
                             </h2>
                             <p v-if="song.kategorien.length > 0 && sortMode !== 'category'">
                                 {{ formatCategories(song.kategorien) }}
@@ -170,6 +176,7 @@ import {
     IonButton,
     IonCard,
     IonCardContent,
+    IonChip,
     IonContent,
     IonFab,
     IonFabButton,
@@ -183,7 +190,9 @@ import {
 } from '@ionic/vue';
 import {
     checkmarkOutline,
+    codeSlashOutline,
     downloadOutline,
+    imageOutline,
     listOutline,
     musicalNotesOutline,
     searchOutline,
@@ -378,6 +387,38 @@ function formatSyncTime(date: Date): string {
         timeStyle: 'short',
     }).format(date);
 }
+
+// Check if song has ABC notation
+function hasAbcNotation(song: any): boolean {
+    if (!song.melodieAbc || !Array.isArray(song.melodieAbc) || song.melodieAbc.length === 0) {
+        return false;
+    }
+
+    // Find default melody or use first one
+    const defaultMelody = song.melodieAbc.find((m: any) => m.is_default) || song.melodieAbc[0];
+    let abcNotation: string | undefined = defaultMelody?.abc_notation as any;
+
+    // If abc_notation is an array, get the default or first notation
+    if (Array.isArray(abcNotation)) {
+        const notation = abcNotation.find((n: any) => n.is_default) || abcNotation[0];
+        abcNotation = notation?.abc_notation;
+    }
+
+    return !!(abcNotation && typeof abcNotation === 'string' && abcNotation.trim().length > 0);
+}
+
+// Check if song has image file
+function hasImageFile(song: any): boolean {
+    if (!song.noten || !Array.isArray(song.noten) || song.noten.length === 0) {
+        return false;
+    }
+
+    return song.noten.some((note: any) => {
+        if (!note.filename_download) return false;
+        const filename = note.filename_download.toLowerCase();
+        return filename.endsWith('.png') || filename.endsWith('.jpg') || filename.endsWith('.svg');
+    });
+}
 </script>
 
 <style scoped>
@@ -434,5 +475,43 @@ function formatSyncTime(date: Date): string {
 
 .empty-state ion-button {
     margin-top: 8px;
+}
+
+ion-item h2 {
+    display: flex;
+    align-items: start;
+    gap: 6px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+}
+
+.song-title-text {
+    flex: 1 1 auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+.song-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.abc-tag {
+    background-color: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+}
+
+.image-tag {
+    background-color: var(--ion-color-secondary);
+    color: var(--ion-color-secondary-contrast);
 }
 </style>
