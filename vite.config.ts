@@ -10,7 +10,9 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 export default defineConfig({
     plugins: [
         vue(),
-        legacy(),
+        legacy({
+            targets: ['defaults', 'not IE 11'],
+        }),
         vueDevTools(),
         VitePWA({
             registerType: 'autoUpdate',
@@ -169,12 +171,24 @@ export default defineConfig({
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
             output: {
-                // Manual chunk splitting for better caching
-                manualChunks: {
-                    'vue-vendor': ['vue', 'vue-router', 'pinia'],
-                    'ionic-vendor': ['@ionic/vue', '@ionic/vue-router', 'ionicons'],
-                    'directus-vendor': ['@directus/sdk'],
-                    'abcjs-vendor': ['abcjs'],
+                // Rolldown (Vite 8) requires manualChunks to be a function, not an object map
+                manualChunks(id: string) {
+                    const n = id.replace(/\\/g, '/');
+                    if (!n.includes('/node_modules/')) return;
+                    if (n.includes('/node_modules/@directus/sdk/')) return 'directus-vendor';
+                    if (n.includes('/node_modules/abcjs/')) return 'abcjs-vendor';
+                    if (
+                        n.includes('/node_modules/@ionic/') ||
+                        n.includes('/node_modules/ionicons/')
+                    )
+                        return 'ionic-vendor';
+                    if (
+                        n.includes('/node_modules/vue-router/') ||
+                        n.includes('/node_modules/pinia/') ||
+                        /\/node_modules\/vue\//.test(n) ||
+                        /\/node_modules\/@vue\//.test(n)
+                    )
+                        return 'vue-vendor';
                 },
                 // Obfuscate chunk names
                 chunkFileNames: (chunkInfo) => {
