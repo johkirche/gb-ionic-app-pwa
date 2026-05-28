@@ -64,5 +64,15 @@
         "vue-tsc": "^3.3.2",
         "wrangler": "^4.95.0"
     },
-    "description": "An Ionic project"
+    "description": "An Ionic project",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "core-js",
+            "cypress",
+            "esbuild",
+            "gl",
+            "sharp",
+            "workerd"
+        ]
+    }
 }
