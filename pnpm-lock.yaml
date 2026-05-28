@@ -24,8 +24,8 @@ importers:
         specifier: 8.0.2
         version: 8.0.2(@capacitor/core@8.3.4)
       '@directus/sdk':
-        specifier: ^20.3.0
-        version: 20.3.0
+        specifier: ^21.3.0
+        version: 21.3.0
       '@ionic/vue':
         specifier: ^8.8.8
         version: 8.8.8(@stencil/core@4.43.0)(vue-router@5.1.0(@vue/compiler-sfc@3.5.35)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.35(typescript@6.0.3)))(vite@8.0.14(@types/node@25.0.3)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.35(typescript@6.0.3)))(vue@3.5.35(typescript@6.0.3))
@@ -947,8 +947,8 @@ packages:
   '@cypress/xvfb@1.2.4':
     resolution: {integrity: sha512-skbBzPggOVYCbnGgV+0dmBdW/s77ZkAOXIC1knS8NagwDjBrNC1LuXtQJeiN6l+m7lzmHtaoUw/ctJKdqkG57Q==}
 
-  '@directus/sdk@20.3.0':
-    resolution: {integrity: sha512-auy59B0A7Ri+4JDy0JcdFHnsHvOkl3ixWMWYciXAbm4oYIE9S4be8xEpIwA5qhlPTOprJ6JHPWo9rEvcrLwNtA==}
+  '@directus/sdk@21.3.0':
+    resolution: {integrity: sha512-ozK2OmlaBiCuP5RuL046CaGGqEnlOdl4Rg690qaOgbC0C45XnDZVeBlb+NDLTUqEj88iSX8Cv74G3qh0L2i7Yw==}
     engines: {node: '>=22'}
 
   '@emnapi/core@1.10.0':
@@ -5872,7 +5872,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@directus/sdk@20.3.0': {}
+  '@directus/sdk@21.3.0': {}
 
   '@emnapi/core@1.10.0':
     dependencies:
