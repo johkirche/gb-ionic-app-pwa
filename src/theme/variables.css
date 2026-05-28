@@ -62,10 +62,6 @@ ion-card {
     padding: var(--spacing-xs);
 }
 
-.card-content-md {
-    padding: 0 var(--spacing-sm) 0;
-}
-
 ion-list.transparent {
     background: transparent;
 }
