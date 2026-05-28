@@ -199,6 +199,8 @@ import {
     checkmarkOutline,
     codeSlashOutline,
     downloadOutline,
+    heart,
+    heartOutline,
     imageOutline,
     listOutline,
     musicalNotesOutline,
@@ -207,6 +209,7 @@ import {
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 
+import { useFavoritesStore } from '@/stores/favorites';
 import { useSongsStore } from '@/stores/songs';
 
 import { useSongFiltering } from '@/composables/useSongFiltering';
@@ -221,6 +224,7 @@ import SongToolbar from '@/components/songlist/SongToolbar.vue';
 import type { Autor, Category } from '@/db';
 
 const songsStore = useSongsStore();
+const favoritesStore = useFavoritesStore();
 const { songs, isLoading, error, lastSyncTime, hasSongs } = storeToRefs(songsStore);
 const router = useRouter();
 
@@ -295,19 +299,33 @@ const sortActionButtons = computed(() => [
 ]);
 
 // Song action sheet buttons
-const songActionButtons = computed(() => [
-    {
-        text: 'Zu Playlist hinzufügen',
-        icon: listOutline,
-        handler: () => {
-            showPlaylistModal.value = true;
+const songActionButtons = computed(() => {
+    const isFav = selectedSongId.value
+        ? favoritesStore.isFavorite(selectedSongId.value)
+        : false;
+    return [
+        {
+            text: isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen',
+            icon: isFav ? heart : heartOutline,
+            handler: () => {
+                if (selectedSongId.value) {
+                    favoritesStore.toggleFavorite(selectedSongId.value);
+                }
+            },
         },
-    },
-    {
-        text: 'Abbrechen',
-        role: 'cancel' as const,
-    },
-]);
+        {
+            text: 'Zu Playlist hinzufügen',
+            icon: listOutline,
+            handler: () => {
+                showPlaylistModal.value = true;
+            },
+        },
+        {
+            text: 'Abbrechen',
+            role: 'cancel' as const,
+        },
+    ];
+});
 
 // Long-press handler
 function openSongActions(songId: string) {

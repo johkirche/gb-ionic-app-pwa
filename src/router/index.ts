@@ -6,6 +6,7 @@ import { useUserStore } from '@/stores/user';
 import AddSongsToPlaylistPage from '../views/AddSongsToPlaylistPage.vue';
 import CreatePlaylistPage from '../views/CreatePlaylistPage.vue';
 import DownloadPage from '../views/DownloadPage.vue';
+import FavoritesPage from '../views/FavoritesPage.vue';
 import HomePage from '../views/HomePage.vue';
 import InstallPWAPage from '../views/InstallPWAPage.vue';
 import LoginPage from '../views/LoginPage.vue';
@@ -81,6 +82,12 @@ const routes: Array<RouteRecordRaw> = [
         path: '/settings',
         name: 'Settings',
         component: SettingsPage,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/favorites',
+        name: 'Favorites',
+        component: FavoritesPage,
         meta: { requiresAuth: true },
     },
     {

@@ -103,6 +103,12 @@ export interface PreferencesData {
     xmlSettings?: XmlDisplaySettings;
 }
 
+// Favorites: id == song id
+export interface Favorite {
+    id: string;
+    createdAt: Date;
+}
+
 // Dexie database class
 export class GesangbuchDatabase extends Dexie {
     songs!: Table<Song, string>;
@@ -111,6 +117,7 @@ export class GesangbuchDatabase extends Dexie {
     users!: Table<UserData, string>;
     playlists!: Table<Playlist, string>;
     preferences!: Table<PreferencesData, string>;
+    favorites!: Table<Favorite, string>;
 
     constructor() {
         super('GesangbuchDB');
@@ -145,6 +152,17 @@ export class GesangbuchDatabase extends Dexie {
             users: 'id, email, role',
             playlists: 'id, name, createdAt',
             preferences: 'id',
+        });
+
+        // Version 5: Add favorites table
+        this.version(5).stores({
+            songs: 'id, titel',
+            files: 'id, filename',
+            auth: 'id',
+            users: 'id, email, role',
+            playlists: 'id, name, createdAt',
+            preferences: 'id',
+            favorites: 'id, createdAt',
         });
     }
 }
