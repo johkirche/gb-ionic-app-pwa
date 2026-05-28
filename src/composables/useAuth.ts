@@ -127,7 +127,7 @@ export function useAuth() {
 
             // Register with custom Directus extension that validates code and creates activated user
             // This endpoint will return 200 if code is valid and user is created with activated role
-            const response = await directusClient.request({
+            await directusClient.request({
                 path: '/custom/register',
                 body: JSON.stringify({
                     email,

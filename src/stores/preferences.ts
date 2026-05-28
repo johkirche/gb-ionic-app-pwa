@@ -45,7 +45,6 @@ export const usePreferencesStore = defineStore('preferences', () => {
         }
     }
 
-
     async function persist() {
         await db.preferences.put({
             id: 'default',

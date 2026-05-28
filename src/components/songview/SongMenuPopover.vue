@@ -151,8 +151,6 @@ import {
     IonSelectOption,
     IonToggle,
 } from '@ionic/vue';
-
-import type { MelodyDisplayMode, XmlDisplaySettings } from '@/db';
 import {
     imageOutline,
     listOutline,
@@ -162,6 +160,8 @@ import {
 } from 'ionicons/icons';
 
 import PlaylistSelectModal from '@/components/playlist/PlaylistSelectModal.vue';
+
+import type { MelodyDisplayMode, XmlDisplaySettings } from '@/db';
 
 defineProps<{
     songId: string;

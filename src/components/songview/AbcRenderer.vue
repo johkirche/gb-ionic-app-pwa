@@ -180,7 +180,7 @@ async function startPlayback() {
         // Create timing callbacks for cursor/highlighting
         timingCallbacks = new abcjs.TimingCallbacks(visualObj[0], {
             qpm: qpm,
-            beatCallback: (beatNumber: number, totalBeats: number, totalTime: number) => {
+            beatCallback: (_beatNumber: number, _totalBeats: number, _totalTime: number) => {
                 // Called on each beat
             },
             eventCallback: (event: any): any => {

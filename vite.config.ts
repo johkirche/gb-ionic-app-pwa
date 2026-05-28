@@ -191,12 +191,7 @@ export default defineConfig({
                         return 'vue-vendor';
                 },
                 // Obfuscate chunk names
-                chunkFileNames: (chunkInfo) => {
-                    const facadeModuleId = chunkInfo.facadeModuleId
-                        ? chunkInfo.facadeModuleId.split('/').pop()
-                        : 'chunk';
-                    return `assets/[name]-[hash].js`;
-                },
+                chunkFileNames: `assets/[name]-[hash].js`,
                 entryFileNames: 'assets/[name]-[hash].js',
                 assetFileNames: 'assets/[name]-[hash].[ext]',
             },

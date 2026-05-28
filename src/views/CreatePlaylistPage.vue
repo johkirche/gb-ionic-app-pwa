@@ -86,7 +86,6 @@ import {
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
     IonModal,
     IonPage,
     IonTitle,
