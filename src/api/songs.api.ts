@@ -51,6 +51,11 @@ interface DirectusAbcMelodie {
 interface DirectusGesangbuchlied {
     id: string;
     titel: string;
+    liednummer2026: number | null;
+    notentext_mxml: {
+        id: string;
+        filename_download: string;
+    } | null;
     textId: {
         strophenEinzeln: DirectusStrophe[];
         autorId: DirectusAutor[];
@@ -69,7 +74,7 @@ interface DirectusResponse {
 
 // GraphQL query
 const SONGS_QUERY = `
-    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
+    { gesangbuchlied( filter: { bewertungKleinerKreis: { bezeichner: { _eq: "Rein" } } } limit: 5000 ) { id titel liednummer2026 notentext_mxml { id filename_download } textId { strophenEinzeln autorId { autor_id { vorname nachname sterbejahr } } } melodieId { abc_melodie autorId { autor_id { vorname nachname sterbejahr } } noten { directus_files_id { filename_download id } } } kategorieId { kategorie_id { name id } } } }
 `;
 
 // Get current token from user store or env variable for debug mode
@@ -96,7 +101,7 @@ async function getCurrentToken(): Promise<string | null> {
 }
 
 // Transform nested Directus response to flat Song structure
-function transformSong(directusSong: DirectusGesangbuchlied, index: number): Song {
+function transformSong(directusSong: DirectusGesangbuchlied): Song {
     const textAutoren: Autor[] =
         directusSong.textId?.autorId?.map((a) => ({
             vorname: a.autor_id.vorname,
@@ -134,15 +139,23 @@ function transformSong(directusSong: DirectusGesangbuchlied, index: number): Son
     // Transform abc_melodie array - flatten the nested structure
     const melodieAbc = directusSong.melodieId?.abc_melodie || [];
 
+    const notentextMxml: NotenFile | null = directusSong.notentext_mxml
+        ? {
+              id: directusSong.notentext_mxml.id,
+              filename_download: directusSong.notentext_mxml.filename_download,
+          }
+        : null;
+
     return {
         id: directusSong.id,
-        index,
+        index: directusSong.liednummer2026 ?? 0,
         titel: directusSong.titel,
         strophen,
         textAutoren,
         melodieAbc,
         melodieAutoren,
         noten,
+        notentextMxml,
         kategorien,
     };
 }
@@ -157,7 +170,7 @@ export async function fetchSongs(): Promise<Song[]> {
 
         const response = await directusClient.query<DirectusResponse>(SONGS_QUERY);
 
-        return response.gesangbuchlied.map((song, index) => transformSong(song, index + 1));
+        return response.gesangbuchlied.map((song) => transformSong(song));
     } catch (error) {
         // Check for invalid credentials first (user account may be deleted)
         const handled = await handleApiError(error);
@@ -174,7 +187,7 @@ export async function fetchSongs(): Promise<Song[]> {
                     await directusClient.setToken(newToken);
                 }
                 const response = await directusClient.query<DirectusResponse>(SONGS_QUERY);
-                return response.gesangbuchlied.map((song, index) => transformSong(song, index + 1));
+                return response.gesangbuchlied.map((song) => transformSong(song));
             }
         }
         console.error('Error fetching songs from Directus:', error);
@@ -202,6 +215,9 @@ export async function fetchSongsWithFiles(): Promise<{
                 fileIds.add(note.id);
             }
         });
+        if (song.notentextMxml) {
+            fileIds.add(song.notentextMxml.id);
+        }
     });
 
     return {

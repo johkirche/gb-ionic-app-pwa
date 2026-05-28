@@ -1,10 +1,12 @@
 <template>
     <div class="verses-container">
         <div class="verses-section">
-            <div v-for="(strophe, idx) in strophes" :key="idx" class="verse">
-                <span class="verse-number">{{ idx + 1 }}.</span>
-                <p class="verse-text" v-html="formatVerse(getStropheText(strophe))"></p>
-            </div>
+            <template v-for="(strophe, idx) in strophes" :key="idx">
+                <div v-if="!(skipFirst && idx === 0)" class="verse">
+                    <span class="verse-number">{{ idx + 1 }}.</span>
+                    <p class="verse-text" v-html="formatVerse(getStropheText(strophe))"></p>
+                </div>
+            </template>
         </div>
     </div>
 </template>
@@ -17,6 +19,7 @@ interface Strophe {
 
 defineProps<{
     strophes: Strophe[];
+    skipFirst?: boolean;
 }>();
 
 function getStropheText(strophe: Strophe): string | null | undefined {

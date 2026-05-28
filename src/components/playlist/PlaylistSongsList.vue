@@ -12,7 +12,7 @@
             >
                 <ion-label>
                     <h2>
-                        <span class="song-index">{{ song.index }}.</span>
+                        <span v-if="song.index" class="song-index">{{ song.index }}.</span>
                         {{ song.titel }}
                     </h2>
                     <p v-if="song.kategorien.length > 0">

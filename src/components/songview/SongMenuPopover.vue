@@ -40,26 +40,36 @@
                 </ion-item>
 
                 <!-- Melody Settings Group (only shown when relevant) -->
-                <template v-if="hasMelody || hasMelodyImage">
+                <template v-if="hasMelody || hasMelodyImage || hasMelodyXml">
                     <ion-list-header>
                         <ion-label>Noten</ion-label>
                     </ion-list-header>
-                    <ion-item v-if="hasMelody || hasMelodyImage">
+                    <ion-item>
                         <ion-icon slot="start" :icon="imageOutline" />
-                        <ion-label>Notenbild anzeigen</ion-label>
-                        <ion-toggle
+                        <ion-label>Notenansicht</ion-label>
+                        <ion-select
                             slot="end"
-                            :checked="melodyDisplayMode === 'image'"
-                            :disabled="!hasMelodyImage"
-                            @ionChange="
-                                $emit(
-                                    'update:melodyDisplayMode',
-                                    $event.detail.checked ? 'image' : 'abc',
-                                )
-                            "
-                        />
+                            :value="melodyDisplayMode"
+                            interface="popover"
+                            @ionChange="$emit('update:melodyDisplayMode', $event.detail.value)"
+                        >
+                            <ion-select-option value="abc" :disabled="!hasMelody">
+                                ABC
+                            </ion-select-option>
+                            <ion-select-option value="image" :disabled="!hasMelodyImage">
+                                Notenbild
+                            </ion-select-option>
+                            <ion-select-option value="xml" :disabled="!hasMelodyXml">
+                                MusicXML
+                            </ion-select-option>
+                        </ion-select>
                     </ion-item>
-                    <ion-item v-if="hasMelody && melodyDisplayMode === 'abc'">
+                    <ion-item
+                        v-if="
+                            (melodyDisplayMode === 'abc' && hasMelody) ||
+                            (melodyDisplayMode === 'xml' && hasMelodyXml)
+                        "
+                    >
                         <ion-icon slot="start" :icon="musicalNoteOutline" />
                         <ion-label>
                             <p>Notengröße</p>
@@ -74,6 +84,41 @@
                             :pin="true"
                             :pin-formatter="(value: number) => `${Math.round(value * 100)}%`"
                             @ionInput="handleNotationScaleChange($event.detail.value)"
+                        />
+                    </ion-item>
+                </template>
+
+                <!-- MusicXML-specific Display Settings -->
+                <template v-if="melodyDisplayMode === 'xml' && hasMelodyXml && xmlSettings">
+                    <ion-list-header>
+                        <ion-label>MusicXML Anzeige</ion-label>
+                    </ion-list-header>
+                    <ion-item>
+                        <ion-icon slot="start" :icon="listOutline" />
+                        <ion-label>Taktnummern</ion-label>
+                        <ion-toggle
+                            slot="end"
+                            :checked="xmlSettings.showMeasureNumbers"
+                            @ionChange="
+                                $emit('update:xmlSetting', {
+                                    key: 'showMeasureNumbers',
+                                    value: $event.detail.checked,
+                                })
+                            "
+                        />
+                    </ion-item>
+                    <ion-item>
+                        <ion-icon slot="start" :icon="textOutline" />
+                        <ion-label>Liedtext unter Noten</ion-label>
+                        <ion-toggle
+                            slot="end"
+                            :checked="xmlSettings.showLyrics"
+                            @ionChange="
+                                $emit('update:xmlSetting', {
+                                    key: 'showLyrics',
+                                    value: $event.detail.checked,
+                                })
+                            "
                         />
                     </ion-item>
                 </template>
@@ -106,6 +151,8 @@ import {
     IonSelectOption,
     IonToggle,
 } from '@ionic/vue';
+
+import type { MelodyDisplayMode, XmlDisplaySettings } from '@/db';
 import {
     imageOutline,
     listOutline,
@@ -121,16 +168,24 @@ defineProps<{
     showControls: boolean;
     hasMelody: boolean;
     hasMelodyImage: boolean;
-    melodyDisplayMode: 'abc' | 'image';
+    hasMelodyXml: boolean;
+    melodyDisplayMode: MelodyDisplayMode;
     notationScale: number;
     songFontSize: string;
+    xmlSettings?: XmlDisplaySettings;
 }>();
 
 const emit = defineEmits<{
     'update:showControls': [value: boolean];
-    'update:melodyDisplayMode': [value: 'abc' | 'image'];
+    'update:melodyDisplayMode': [value: MelodyDisplayMode];
     'update:notationScale': [value: number];
     'update:songFontSize': [value: 'small' | 'medium' | 'large' | 'xlarge'];
+    'update:xmlSetting': [
+        payload: {
+            key: keyof XmlDisplaySettings;
+            value: XmlDisplaySettings[keyof XmlDisplaySettings];
+        },
+    ];
 }>();
 
 type RangeValue = number | { lower: number; upper: number };

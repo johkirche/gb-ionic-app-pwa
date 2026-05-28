@@ -1,18 +1,23 @@
 <template>
     <ion-page>
-        <SongHeader :song-index="song?.index" />
+        <SongHeader :song-id="songId" :song-index="song?.index" :song-title="song?.titel" />
 
         <SongMenuPopover
             v-model:show-controls="showControls"
             :song-id="songId"
             :has-melody="hasMelody"
             :has-melody-image="hasMelodyImage"
+            :has-melody-xml="hasMelodyXml"
             :melody-display-mode="melodyDisplayMode"
             :notation-scale="notationScale"
             :song-font-size="textSize"
+            :xml-settings="xmlSettings"
             @update:melody-display-mode="preferencesStore.setMelodyDisplayMode($event)"
             @update:notation-scale="updateNotationScale"
             @update:song-font-size="preferencesStore.setTextSize($event)"
+            @update:xml-setting="
+                preferencesStore.setXmlSetting($event.key, $event.value as boolean)
+            "
         />
 
         <ion-content :fullscreen="true">
@@ -24,18 +29,29 @@
 
             <!-- Song Content -->
             <div v-else class="song-content" :class="`text-size-${textSize}`">
-                <!-- Song Title -->
-                <h1 class="song-title">
-                    <span class="song-title-index">{{ song.index }}.</span>
-                    {{ song.titel }}
-                </h1>
-
-                <!-- Melody Display: Image or ABC Rendering -->
+                <!-- Melody Display: Image, MusicXML, or ABC Rendering -->
                 <SongMelodyImage
                     v-if="melodyDisplayMode === 'image' && hasMelodyImage"
                     :image-url="melodyImageUrl"
                     :is-loading="imageLoading"
                 />
+
+                <!-- MusicXML (OSMD) Rendering -->
+                <div
+                    v-else-if="melodyDisplayMode === 'xml' && hasMelodyXml"
+                    class="melody-section"
+                >
+                    <OsmdRenderer
+                        ref="osmdRendererRef"
+                        :file-blob="melodyXmlBlob"
+                        :scale="notationScale"
+                        :settings="xmlSettings"
+                        :is-playing="isPlaying"
+                        :tempo="tempo"
+                        @play-started="isPlaying = true"
+                        @play-stopped="isPlaying = false"
+                    />
+                </div>
 
                 <!-- ABC Melody Rendering -->
                 <div v-else-if="melodyDisplayMode === 'abc' && hasMelody" class="melody-section">
@@ -49,28 +65,26 @@
                         @play-started="isPlaying = true"
                         @play-stopped="isPlaying = false"
                     />
-
-                    <SongAudioControls
-                        v-if="showControls"
-                        v-model:loop-enabled="loopEnabled"
-                        :is-playing="isPlaying"
-                        :has-paused="hasPaused"
-                        :tempo="tempo"
-                        @toggle-play="togglePlay"
-                        @stop="stopPlayback"
-                        @increase-tempo="increaseTempo"
-                        @decrease-tempo="decreaseTempo"
-                    />
                 </div>
 
                 <!-- No Melody Notice -->
-                <div v-else-if="!hasMelody && !hasMelodyImage" class="no-melody-notice">
+                <div
+                    v-else-if="!hasMelody && !hasMelodyImage && !hasMelodyXml"
+                    class="no-melody-notice"
+                >
                     <ion-icon :icon="musicalNotesOutline" />
                     <span>Keine Melodie verfügbar</span>
                 </div>
 
-                <!-- Song Verses -->
-                <SongVerses :strophes="song.strophen" />
+                <!-- Song Verses (skip first strophe when XML mode shows lyrics under notes) -->
+                <SongVerses
+                    :strophes="song.strophen"
+                    :skip-first="
+                        melodyDisplayMode === 'xml' &&
+                        hasMelodyXml &&
+                        xmlSettings.showLyrics
+                    "
+                />
 
                 <!-- Authors Section -->
                 <SongAuthors
@@ -79,13 +93,34 @@
                 />
             </div>
         </ion-content>
+
+        <ion-footer
+            v-if="
+                song &&
+                showControls &&
+                ((melodyDisplayMode === 'xml' && hasMelodyXml) ||
+                    (melodyDisplayMode === 'abc' && hasMelody))
+            "
+            class="audio-controls-footer"
+        >
+            <SongAudioControls
+                v-model:loop-enabled="loopEnabled"
+                :is-playing="isPlaying"
+                :has-paused="hasPaused"
+                :tempo="tempo"
+                @toggle-play="togglePlay"
+                @stop="stopPlayback"
+                @increase-tempo="increaseTempo"
+                @decrease-tempo="decreaseTempo"
+            />
+        </ion-footer>
     </ion-page>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 
-import { IonContent, IonIcon, IonPage } from '@ionic/vue';
+import { IonContent, IonFooter, IonIcon, IonPage } from '@ionic/vue';
 import { musicalNotesOutline } from 'ionicons/icons';
 import { storeToRefs } from 'pinia';
 import { useRoute } from 'vue-router';
@@ -96,6 +131,7 @@ import { useSongsStore } from '@/stores/songs';
 import { useStoredFiles } from '@/composables/useStoredFiles';
 
 import AbcRenderer from '@/components/songview/AbcRenderer.vue';
+import OsmdRenderer from '@/components/songview/OsmdRenderer.vue';
 import SongAudioControls from '@/components/songview/SongAudioControls.vue';
 import SongAuthors from '@/components/songview/SongAuthors.vue';
 import SongErrorState from '@/components/songview/SongErrorState.vue';
@@ -112,14 +148,17 @@ const songsStore = useSongsStore();
 const { songs, isLoading } = storeToRefs(songsStore);
 
 const preferencesStore = usePreferencesStore();
-const { notationScale, textSize, melodyDisplayMode } = storeToRefs(preferencesStore);
+const { notationScale, textSize, melodyDisplayMode, xmlSettings } =
+    storeToRefs(preferencesStore);
 
 const { getFileUrl } = useStoredFiles();
 const melodyImageUrl = ref<string | null>(null);
 const imageLoading = ref(false);
+const melodyXmlBlob = ref<Blob | null>(null);
 
 // Refs
 const abcRendererRef = ref<InstanceType<typeof AbcRenderer> | null>(null);
+const osmdRendererRef = ref<InstanceType<typeof OsmdRenderer> | null>(null);
 
 // Current song
 const song = ref<Song | null>(null);
@@ -181,6 +220,23 @@ const hasMelodyImage = computed(() => {
     });
 });
 
+// Check if song has MusicXML notation (.mxl or .musicxml)
+const hasMelodyXml = computed(() => !!song.value?.notentextMxml);
+
+// Load MusicXML blob from stored files (lazily — only when xml mode is active)
+async function loadMelodyXml() {
+    if (!song.value?.notentextMxml) {
+        melodyXmlBlob.value = null;
+        return;
+    }
+    try {
+        melodyXmlBlob.value = (await songsStore.getFileBlob(song.value.notentextMxml.id)) || null;
+    } catch (err) {
+        console.error('Error loading MusicXML blob:', err);
+        melodyXmlBlob.value = null;
+    }
+}
+
 // Load melody image from stored files
 async function loadMelodyImage() {
     if (!song.value?.noten || song.value.noten.length === 0) {
@@ -217,8 +273,9 @@ function loadSong() {
     const songId = route.params.id as string;
     if (songId) {
         song.value = songs.value.find((s) => s.id === songId) || null;
-        // Load melody image when song is loaded
+        // Load melody assets when song is loaded
         loadMelodyImage();
+        loadMelodyXml();
     }
     console.log('Loaded song:', song.value);
 }
@@ -245,10 +302,12 @@ watch(
     },
 );
 
-// Reload image when display mode changes
+// Reload assets when display mode changes
 watch(melodyDisplayMode, () => {
     if (melodyDisplayMode.value === 'image') {
         loadMelodyImage();
+    } else if (melodyDisplayMode.value === 'xml') {
+        loadMelodyXml();
     }
 });
 
@@ -264,8 +323,9 @@ function togglePlay() {
 function stopPlayback() {
     isPlaying.value = false;
     hasPaused.value = false;
-    // Call the stop method on the renderer to reset everything
+    // Call the stop method on whichever renderer is active
     abcRendererRef.value?.stop();
+    osmdRendererRef.value?.stop();
 }
 
 // Tempo controls
@@ -294,20 +354,6 @@ function updateNotationScale(value: number | number[] | { lower: number; upper: 
 </script>
 
 <style scoped>
-/* Song Title */
-.song-title {
-    margin: 0 0 var(--spacing-lg);
-    font-size: var(--font-size-xl);
-    font-weight: 600;
-    color: var(--ion-color-dark);
-    line-height: 1.3;
-}
-
-.song-title-index {
-    font-weight: 700;
-    color: var(--ion-color-primary);
-}
-
 .song-content {
     padding: var(--spacing-md);
     max-width: 800px;
@@ -337,11 +383,20 @@ function updateNotationScale(value: number | number[] | { lower: number; upper: 
 
 /* Melody Section */
 .melody-section {
-    background: var(--ion-color-light);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
     overflow-x: auto;
+}
+
+/* Audio controls footer: opaque background, no iOS translucency */
+.audio-controls-footer {
+    --background: var(--ion-color-light);
+    background: var(--ion-color-light);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.audio-controls-footer::before {
+    display: none;
 }
 
 .no-melody-notice {

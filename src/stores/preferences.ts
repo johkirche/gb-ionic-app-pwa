@@ -2,20 +2,27 @@ import { ref } from 'vue';
 
 import { defineStore } from 'pinia';
 
-import { db } from '@/db';
+import { type MelodyDisplayMode, type XmlDisplaySettings, db } from '@/db';
 
 export interface PreferencesData {
     id: string;
     notationScale: number; // Scale factor for ABC notation (0.5 - 2.0)
     textSize: 'small' | 'medium' | 'large' | 'xlarge'; // Text size for song lyrics
-    melodyDisplayMode: 'abc' | 'image'; // Display mode for melody (ABC notation vs downloaded image)
+    melodyDisplayMode: MelodyDisplayMode; // Display mode: ABC notation, image, or MusicXML (OSMD)
+    xmlSettings?: XmlDisplaySettings;
 }
+
+const DEFAULT_XML_SETTINGS: XmlDisplaySettings = {
+    showMeasureNumbers: false,
+    showLyrics: true,
+};
 
 export const usePreferencesStore = defineStore('preferences', () => {
     // State
     const notationScale = ref<number>(1.0); // Default scale
     const textSize = ref<'small' | 'medium' | 'large' | 'xlarge'>('medium'); // Default text size
-    const melodyDisplayMode = ref<'abc' | 'image'>('abc'); // Default to ABC notation
+    const melodyDisplayMode = ref<MelodyDisplayMode>('abc'); // Default to ABC notation
+    const xmlSettings = ref<XmlDisplaySettings>({ ...DEFAULT_XML_SETTINGS });
     const isLoading = ref(false);
 
     // Actions
@@ -29,6 +36,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
                 notationScale.value = prefs.notationScale;
                 textSize.value = prefs.textSize;
                 melodyDisplayMode.value = prefs.melodyDisplayMode || 'abc';
+                xmlSettings.value = { ...DEFAULT_XML_SETTINGS, ...(prefs.xmlSettings || {}) };
             }
         } catch (err) {
             console.error('Error loading preferences:', err);
@@ -37,20 +45,22 @@ export const usePreferencesStore = defineStore('preferences', () => {
         }
     }
 
+
+    async function persist() {
+        await db.preferences.put({
+            id: 'default',
+            notationScale: notationScale.value,
+            textSize: textSize.value,
+            melodyDisplayMode: melodyDisplayMode.value,
+            xmlSettings: xmlSettings.value,
+        });
+    }
+
     async function setNotationScale(scale: number) {
         try {
-            // Clamp scale between 0.5 and 2.0
             const clampedScale = Math.max(0.5, Math.min(2.0, scale));
             notationScale.value = clampedScale;
-
-            // Get current preferences and update
-            const current = await db.preferences.get('default');
-            await db.preferences.put({
-                id: 'default',
-                notationScale: clampedScale,
-                textSize: current?.textSize || textSize.value,
-                melodyDisplayMode: current?.melodyDisplayMode || melodyDisplayMode.value,
-            });
+            await persist();
         } catch (err) {
             console.error('Error saving notation scale:', err);
             throw err;
@@ -60,35 +70,32 @@ export const usePreferencesStore = defineStore('preferences', () => {
     async function setTextSize(size: 'small' | 'medium' | 'large' | 'xlarge') {
         try {
             textSize.value = size;
-
-            // Get current preferences and update
-            const current = await db.preferences.get('default');
-            await db.preferences.put({
-                id: 'default',
-                notationScale: current?.notationScale || notationScale.value,
-                textSize: size,
-                melodyDisplayMode: current?.melodyDisplayMode || melodyDisplayMode.value,
-            });
+            await persist();
         } catch (err) {
             console.error('Error saving text size:', err);
             throw err;
         }
     }
 
-    async function setMelodyDisplayMode(mode: 'abc' | 'image') {
+    async function setMelodyDisplayMode(mode: MelodyDisplayMode) {
         try {
             melodyDisplayMode.value = mode;
-
-            // Get current preferences and update
-            const current = await db.preferences.get('default');
-            await db.preferences.put({
-                id: 'default',
-                notationScale: current?.notationScale || notationScale.value,
-                textSize: current?.textSize || textSize.value,
-                melodyDisplayMode: mode,
-            });
+            await persist();
         } catch (err) {
             console.error('Error saving melody display mode:', err);
+            throw err;
+        }
+    }
+
+    async function setXmlSetting<K extends keyof XmlDisplaySettings>(
+        key: K,
+        value: XmlDisplaySettings[K],
+    ) {
+        try {
+            xmlSettings.value = { ...xmlSettings.value, [key]: value };
+            await persist();
+        } catch (err) {
+            console.error('Error saving XML setting:', err);
             throw err;
         }
     }
@@ -101,6 +108,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
         notationScale,
         textSize,
         melodyDisplayMode,
+        xmlSettings,
         isLoading,
 
         // Actions
@@ -108,6 +116,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
         setNotationScale,
         setTextSize,
         setMelodyDisplayMode,
+        setXmlSetting,
 
         // Initialization promise
         initPromise,

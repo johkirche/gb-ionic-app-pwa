@@ -75,6 +75,9 @@ export const useSongsStore = defineStore('songs', () => {
                         fileIds.add(note.id);
                     }
                 });
+                if (song.notentextMxml) {
+                    fileIds.add(song.notentextMxml.id);
+                }
             });
 
             const fileIdsArray = Array.from(fileIds);
@@ -90,12 +93,17 @@ export const useSongsStore = defineStore('songs', () => {
                     batch.map(async (fileId) => {
                         try {
                             const blob = await fetchFile(fileId);
-                            const song = fetchedSongs.find((s) =>
-                                s.noten.some((n) => n.id === fileId),
+                            const song = fetchedSongs.find(
+                                (s) =>
+                                    s.noten.some((n) => n.id === fileId) ||
+                                    s.notentextMxml?.id === fileId,
                             );
                             const filename =
                                 song?.noten.find((n) => n.id === fileId)?.filename_download ||
-                                `${fileId}.png`;
+                                (song?.notentextMxml?.id === fileId
+                                    ? song.notentextMxml.filename_download
+                                    : undefined) ||
+                                `${fileId}.bin`;
 
                             await db.files.put({ id: fileId, blob, filename });
                             syncProgress.value.current++;

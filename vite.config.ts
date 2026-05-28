@@ -98,6 +98,27 @@ export default defineConfig({
                             },
                         },
                     },
+                    {
+                        // Cache MIDI soundfonts used by osmd-audio-player
+                        // (gleitz/midi-js-soundfonts: MusyngKite or FluidR3_GM, ~1-5 MB per instrument)
+                        urlPattern: /^https:\/\/gleitz\.github\.io\/midi-js-soundfonts\/.*/i,
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'soundfont-cache',
+                            expiration: {
+                                maxEntries: 50,
+                                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                                purgeOnQuotaError: true,
+                            },
+                            cacheableResponse: {
+                                statuses: [0, 200],
+                            },
+                            // Soundfont files are large — allow up to ~10 MB each
+                            matchOptions: {
+                                ignoreVary: true,
+                            },
+                        },
+                    },
                 ],
                 // Ensure the service worker takes control immediately
                 clientsClaim: true,
@@ -176,6 +197,10 @@ export default defineConfig({
         modulePreload: {
             polyfill: true,
         },
+    },
+    server: {
+        port: 8100,
+        strictPort: true,
     },
     test: {
         globals: true,

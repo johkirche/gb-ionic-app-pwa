@@ -90,6 +90,7 @@
                                 <ion-select v-model="melodyDisplayMode">
                                     <ion-select-option value="abc">ABC Notation</ion-select-option>
                                     <ion-select-option value="image">Notenbild</ion-select-option>
+                                    <ion-select-option value="xml">MusicXML</ion-select-option>
                                 </ion-select>
                             </ion-item>
 

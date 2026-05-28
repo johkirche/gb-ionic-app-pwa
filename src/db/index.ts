@@ -55,6 +55,7 @@ export interface Song {
     melodieAbc: MelodieAbc[];
     melodieAutoren: Autor[];
     noten: NotenFile[];
+    notentextMxml: NotenFile | null;
     kategorien: Category[];
 }
 
@@ -87,11 +88,19 @@ export interface Playlist {
 }
 
 // Preferences types
+export type MelodyDisplayMode = 'abc' | 'image' | 'xml';
+
+export interface XmlDisplaySettings {
+    showMeasureNumbers: boolean;
+    showLyrics: boolean;
+}
+
 export interface PreferencesData {
     id: string;
     notationScale: number;
     textSize: 'small' | 'medium' | 'large' | 'xlarge';
-    melodyDisplayMode: 'abc' | 'image';
+    melodyDisplayMode: MelodyDisplayMode;
+    xmlSettings?: XmlDisplaySettings;
 }
 
 // Dexie database class

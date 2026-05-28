@@ -13,6 +13,7 @@
                 :selected-categories="filters.selectedCategories"
                 :has-notes="filters.hasNotes"
                 :has-melody="filters.hasMelody"
+                :has-melody-xml="filters.hasMelodyXml"
                 :filter-index-range="filters.indexRange"
                 :active-filter-count="activeFilterCount"
                 :has-active-filters="hasActiveFilters"
@@ -27,6 +28,7 @@
                 @toggle-category="toggleCategory"
                 @set-has-notes="setHasNotes"
                 @set-has-melody="setHasMelody"
+                @set-has-melody-xml="setHasMelodyXml"
                 @set-index-range="setIndexRange"
             />
 
@@ -45,6 +47,7 @@
                 :selected-categories="filters.selectedCategories"
                 :has-notes="filters.hasNotes"
                 :has-melody="filters.hasMelody"
+                :has-melody-xml="filters.hasMelodyXml"
                 :filter-index-range="filters.indexRange"
                 :index-range="indexRange"
                 :has-active-filters="hasActiveFilters"
@@ -52,6 +55,7 @@
                 @toggle-category="toggleCategory"
                 @set-has-notes="setHasNotes"
                 @set-has-melody="setHasMelody"
+                @set-has-melody-xml="setHasMelodyXml"
                 @set-index-range="setIndexRange"
                 @clear-all="clearFiltersKeepSearch"
             />
@@ -111,7 +115,7 @@
                     >
                         <ion-label>
                             <h2>
-                                <span v-if="sortMode === 'index'" class="song-index">
+                                <span v-if="song.index" class="song-index">
                                     {{ song.index }}.
                                 </span>
                                 <span class="song-title-text">{{ song.titel }}</span>
@@ -121,8 +125,11 @@
                                 <span v-if="hasImageFile(song)" class="song-tag image-tag">
                                     Bild
                                 </span>
+                                <span v-if="song.notentextMxml" class="song-tag xml-tag">
+                                    XML
+                                </span>
                             </h2>
-                            <p v-if="song.kategorien.length > 0 && sortMode !== 'category'">
+                            <p v-if="sortMode !== 'category' && formatCategories(song.kategorien)">
                                 {{ formatCategories(song.kategorien) }}
                             </p>
                             <p v-if="song.textAutoren.length > 0" class="authors">
@@ -234,6 +241,7 @@ const {
     toggleCategory,
     setHasNotes,
     setHasMelody,
+    setHasMelodyXml,
     setIndexRange,
     clearAllFilters,
     clearFiltersKeepSearch,
@@ -367,7 +375,10 @@ function navigateToSong(songId: string) {
 
 // Format categories for display
 function formatCategories(categories: Category[]): string {
-    return categories.map((c) => c.name).join(', ');
+    return categories
+        .map((c) => c.name?.trim())
+        .filter((name): name is string => !!name)
+        .join(', ');
 }
 
 // Format authors for display
@@ -513,5 +524,10 @@ ion-item h2 {
 .image-tag {
     background-color: var(--ion-color-secondary);
     color: var(--ion-color-secondary-contrast);
+}
+
+.xml-tag {
+    background-color: var(--ion-color-tertiary);
+    color: var(--ion-color-tertiary-contrast);
 }
 </style>

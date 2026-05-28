@@ -1,0 +1,342 @@
+<template>
+    <div ref="containerRef" class="osmd-renderer">
+        <div ref="notationRef" class="notation-container"></div>
+
+        <div v-if="renderError" class="render-error">
+            <ion-icon :icon="alertCircleOutline" />
+            <span>{{ renderError }}</span>
+        </div>
+    </div>
+</template>
+
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+
+import { IonIcon } from '@ionic/vue';
+import { alertCircleOutline } from 'ionicons/icons';
+import type PlaybackEngineType from 'osmd-audio-player';
+import type { OpenSheetMusicDisplay as OSMDType } from 'opensheetmusicdisplay';
+
+import type { XmlDisplaySettings } from '@/db';
+
+const props = defineProps<{
+    fileBlob: Blob | null;
+    scale?: number;
+    settings?: XmlDisplaySettings;
+    isPlaying?: boolean;
+    tempo?: number;
+}>();
+
+const emit = defineEmits<{
+    (e: 'playStarted'): void;
+    (e: 'playStopped'): void;
+}>();
+
+defineExpose({ stop: stopPlayback });
+
+const containerRef = ref<HTMLElement | null>(null);
+const notationRef = ref<HTMLElement | null>(null);
+const renderError = ref<string | null>(null);
+
+let osmd: OSMDType | null = null;
+let playbackEngine: PlaybackEngineType | null = null;
+let isInitialized = false;
+let themeObserver: MutationObserver | null = null;
+
+const isDarkMode = ref(false);
+
+function detectDarkMode() {
+    isDarkMode.value = document.documentElement.classList.contains('ion-palette-dark');
+}
+
+function getOsmdOptions() {
+    const s = props.settings;
+    const fg = isDarkMode.value ? '#e5e5e5' : undefined; // undefined keeps OSMD's default (black)
+    return {
+        autoResize: true,
+        backend: 'svg' as const,
+        // Song title/composer live in the page header — never render them inside the score.
+        drawTitle: false,
+        drawSubtitle: false,
+        drawComposer: false,
+        drawLyricist: false,
+        drawPartNames: false,
+        drawMeasureNumbers: s?.showMeasureNumbers ?? false,
+        drawLyrics: s?.showLyrics ?? true,
+        renderSingleHorizontalStaffline: false,
+        compactMode: true,
+        defaultColorMusic: fg,
+        defaultColorLabel: fg,
+        defaultColorTitle: fg,
+        defaultFontFamily: 'Helvetica, Arial, sans-serif',
+    };
+}
+
+async function initOsmd() {
+    if (!notationRef.value) return;
+
+    try {
+        detectDarkMode();
+        const { OpenSheetMusicDisplay } = await import('opensheetmusicdisplay');
+        osmd = new OpenSheetMusicDisplay(notationRef.value, getOsmdOptions());
+        applyEngravingTweaks();
+        isInitialized = true;
+        await loadAndRender();
+
+        // Watch for theme toggle on documentElement (.ion-palette-dark class)
+        themeObserver = new MutationObserver(() => {
+            const wasDark = isDarkMode.value;
+            detectDarkMode();
+            if (wasDark !== isDarkMode.value && osmd) {
+                (osmd as any).setOptions(getOsmdOptions());
+                osmd.render();
+            }
+        });
+        themeObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class'],
+        });
+    } catch (error) {
+        console.error('Failed to load OSMD:', error);
+        renderError.value = 'Notation konnte nicht geladen werden';
+    }
+}
+
+// Tighten OSMD's default page/system margins for a denser hymnal layout.
+// Also collapse the inter-system gap when lyrics are hidden — otherwise
+// OSMD leaves the space it would have used for lyrics empty.
+function applyEngravingTweaks() {
+    if (!osmd) return;
+    const rules = (osmd as any).EngravingRules;
+    if (!rules) return;
+    rules.PageLeftMargin = 1;
+    rules.PageRightMargin = 1;
+    rules.PageTopMargin = 1;
+    rules.PageBottomMargin = 1;
+    rules.SystemLeftMargin = 0;
+    rules.SystemRightMargin = 0;
+
+    const lyricsOn = props.settings?.showLyrics ?? true;
+    if (lyricsOn) {
+        // Restore OSMD defaults (values taken from EngravingRules ctor).
+        rules.MinimumDistanceBetweenSystems = 7;
+        rules.MinSkyBottomDistBetweenSystems = 5;
+    } else {
+        // Without lyrics, slam the systems closer together.
+        rules.MinimumDistanceBetweenSystems = 2;
+        rules.MinSkyBottomDistBetweenSystems = 1;
+    }
+}
+
+async function loadAndRender() {
+    if (!osmd || !props.fileBlob) return;
+
+    try {
+        renderError.value = null;
+
+        const arrayBuffer = await props.fileBlob.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+
+        const isMxl = bytes[0] === 0x50 && bytes[1] === 0x4b;
+
+        if (isMxl) {
+            let binaryStr = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binaryStr += String.fromCharCode(bytes[i]);
+            }
+            await osmd.load(binaryStr);
+        } else {
+            const text = new TextDecoder('utf-8').decode(bytes);
+            await osmd.load(text);
+        }
+
+        applyScale();
+        osmd.render();
+
+        // (Re)initialize audio playback engine
+        await initPlayback();
+    } catch (error) {
+        console.error('Failed to render MusicXML:', error);
+        renderError.value = 'Fehler beim Rendern der Noten';
+    }
+}
+
+async function initPlayback() {
+    if (!osmd) return;
+
+    // Tear down any previous engine
+    if (playbackEngine) {
+        try {
+            await playbackEngine.stop();
+        } catch {
+            // ignore
+        }
+        playbackEngine = null;
+    }
+
+    try {
+        const PlaybackEngineModule = await import('osmd-audio-player');
+        const PlaybackEngine = PlaybackEngineModule.default;
+        playbackEngine = new PlaybackEngine();
+        await playbackEngine.loadScore(osmd as any);
+        if (props.tempo) {
+            playbackEngine.setBpm(props.tempo);
+        }
+    } catch (error) {
+        console.error('Failed to init OSMD audio player:', error);
+        // Audio failure should not block visual rendering
+        playbackEngine = null;
+    }
+}
+
+function applyScale() {
+    if (!osmd) return;
+    osmd.Zoom = props.scale ?? 1.0;
+}
+
+async function startPlayback() {
+    if (!playbackEngine) {
+        await initPlayback();
+    }
+    if (!playbackEngine) return;
+    try {
+        await playbackEngine.play();
+        emit('playStarted');
+    } catch (error) {
+        console.error('OSMD playback error:', error);
+        emit('playStopped');
+    }
+}
+
+function pausePlayback() {
+    if (!playbackEngine) return;
+    try {
+        playbackEngine.pause();
+    } catch (error) {
+        console.error('OSMD pause error:', error);
+    }
+}
+
+async function stopPlayback() {
+    if (!playbackEngine) return;
+    try {
+        await playbackEngine.stop();
+    } catch (error) {
+        console.error('OSMD stop error:', error);
+    }
+    emit('playStopped');
+}
+
+watch(
+    () => props.fileBlob,
+    () => {
+        if (isInitialized) {
+            loadAndRender();
+        }
+    },
+);
+
+watch(
+    () => props.scale,
+    () => {
+        if (osmd && isInitialized) {
+            applyScale();
+            osmd.render();
+        }
+    },
+);
+
+watch(
+    () => props.settings,
+    () => {
+        if (osmd && isInitialized) {
+            // setOptions accepts a partial options object
+            (osmd as any).setOptions(getOsmdOptions());
+            applyEngravingTweaks();
+            osmd.render();
+        }
+    },
+    { deep: true },
+);
+
+watch(
+    () => props.tempo,
+    (newTempo) => {
+        if (playbackEngine && newTempo) {
+            playbackEngine.setBpm(newTempo);
+        }
+    },
+);
+
+watch(
+    () => props.isPlaying,
+    (newValue) => {
+        if (newValue) {
+            startPlayback();
+        } else {
+            pausePlayback();
+        }
+    },
+);
+
+onMounted(() => {
+    initOsmd();
+});
+
+onBeforeUnmount(async () => {
+    if (themeObserver) {
+        themeObserver.disconnect();
+        themeObserver = null;
+    }
+    if (playbackEngine) {
+        try {
+            await playbackEngine.stop();
+        } catch {
+            // ignore
+        }
+        playbackEngine = null;
+    }
+    if (osmd) {
+        try {
+            osmd.clear();
+        } catch {
+            // ignore
+        }
+        osmd = null;
+    }
+});
+</script>
+
+<style scoped>
+.osmd-renderer {
+    position: relative;
+    width: 100%;
+}
+
+.notation-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.notation-container :deep(svg) {
+    max-width: 100%;
+    height: auto;
+}
+
+.render-error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--ion-color-danger-tint);
+    border-radius: var(--radius-md);
+    color: var(--ion-color-danger-shade);
+    font-size: var(--font-size-sm);
+}
+
+.render-error ion-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+}
+</style>

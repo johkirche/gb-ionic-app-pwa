@@ -68,11 +68,9 @@ defineEmits<{
     align-items: center;
     justify-content: center;
     gap: var(--spacing-md);
-    padding-top: var(--spacing-md);
-    border-top: 1px solid var(--ion-color-medium-tint);
-    margin-top: var(--spacing-md);
-    margin-left: calc(var(--spacing-sm) * -1);
-    margin-right: calc(var(--spacing-sm) * -1);
+    background: var(--ion-color-light);
+    border-top: 1px solid var(--ion-color-light-shade);
+    padding: var(--spacing-xs) var(--spacing-md);
 }
 
 .tempo-control {
