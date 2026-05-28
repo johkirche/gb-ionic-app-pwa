@@ -4,7 +4,29 @@ import tseslint from "typescript-eslint";
 import vueParser from "vue-eslint-parser";
 import eslintConfigPrettier from 'eslint-plugin-prettier/recommended';
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export default [
+  {
+    ignores: [
+      ".DS_Store",
+      "node_modules/",
+      "coverage/",
+      "dist/",
+      "ios/",
+      "android/",
+      ".env.local",
+      ".env.*.local",
+      "**/*-debug.log*",
+      ".idea/",
+      ".vscode/",
+      "*.suo",
+      "*.ntvs*",
+      "*.njsproj",
+      "*.sln",
+      "*.sw?",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs["flat/essential"],
@@ -24,8 +46,8 @@ export default [
       },
     },
     rules: {
-      "no-console": import.meta.env.NODE_ENV === "production" ? "warn" : "off",
-      "no-debugger": import.meta.env.NODE_ENV === "production" ? "warn" : "off",
+      "no-console": isProduction ? "warn" : "off",
+      "no-debugger": isProduction ? "warn" : "off",
       "vue/no-deprecated-slot-attribute": "off",
       "@typescript-eslint/no-explicit-any": "off",
     },
