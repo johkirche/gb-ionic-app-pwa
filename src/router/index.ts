@@ -122,7 +122,7 @@ const router = createRouter({
 });
 
 // Navigation guard for authentication
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to) => {
     const userStore = useUserStore();
 
     // Wait for user data to be loaded from IndexedDB
@@ -132,21 +132,18 @@ router.beforeEach(async (to, from, next) => {
 
     // If skip auth is enabled, allow all navigation
     if (userStore.skipAuth) {
-        next();
-        return;
+        return true;
     }
 
     // If route requires authentication and user is not logged in
     if (requiresAuth && !userStore.isLoggedIn) {
         // Redirect to login page
-        next({ name: 'Login' });
-        return;
+        return { name: 'Login' };
     }
 
     // If user is logged in and trying to access login/register, redirect to home
     if (userStore.isLoggedIn && (to.name === 'Login' || to.name === 'Register')) {
-        next({ name: 'Home' });
-        return;
+        return { name: 'Home' };
     }
 
     // If onboarding is in progress, keep the user on onboarding instead of landing on Home
@@ -154,15 +151,14 @@ router.beforeEach(async (to, from, next) => {
     try {
         const onboardingInProgress = localStorage.getItem('onboarding.inProgress') === '1';
         if (onboardingInProgress && userStore.isLoggedIn && to.name === 'Home') {
-            next({ name: 'Onboarding' });
-            return;
+            return { name: 'Onboarding' };
         }
     } catch {
         // ignore storage errors
     }
 
     // Allow navigation
-    next();
+    return true;
 });
 
 export default router;
