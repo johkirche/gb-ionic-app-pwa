@@ -1,6 +1,6 @@
 import { type Ref, computed, ref } from 'vue';
 
-import type { Category, Song } from '@/db';
+import type { Song } from '@/db';
 
 export interface FilterState {
     searchQuery: string;

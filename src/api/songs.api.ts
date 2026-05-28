@@ -175,7 +175,7 @@ export async function fetchSongs(): Promise<Song[]> {
         // Check for invalid credentials first (user account may be deleted)
         const handled = await handleApiError(error);
         if (handled) {
-            throw new Error('Invalid credentials - user logged out');
+            throw new Error('Invalid credentials - user logged out', { cause: error });
         }
 
         // If unauthorized, try to refresh token and retry
@@ -191,7 +191,7 @@ export async function fetchSongs(): Promise<Song[]> {
             }
         }
         console.error('Error fetching songs from Directus:', error);
-        throw new Error('Failed to fetch songs from server');
+        throw new Error('Failed to fetch songs from server', { cause: error });
     }
 }
 

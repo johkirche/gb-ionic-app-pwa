@@ -256,7 +256,6 @@ import { computed, ref } from 'vue';
 
 import { IonButton, IonContent, IonIcon, IonInput, IonPage, IonSpinner, IonText } from '@ionic/vue';
 import {
-    arrowBackOutline,
     arrowForwardOutline,
     checkmarkCircleOutline,
     ellipseOutline,
@@ -309,14 +308,6 @@ const isStep1Valid = computed(() => {
         passwordsMatch.value
     );
 });
-
-function handleBack() {
-    if (currentStep.value > 1) {
-        currentStep.value--;
-    } else {
-        router.back();
-    }
-}
 
 function goToStep2() {
     if (!hasMinLength.value || !passwordsMatch.value) {

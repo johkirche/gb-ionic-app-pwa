@@ -67,7 +67,7 @@ export async function fetchFile(fileId: string): Promise<Blob> {
         // Check for invalid credentials (user account may be deleted)
         const handled = await handleApiError(error);
         if (handled) {
-            throw new Error('Invalid credentials - user logged out');
+            throw new Error('Invalid credentials - user logged out', { cause: error });
         }
 
         throw error;

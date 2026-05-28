@@ -1,33 +1,74 @@
-import js from "@eslint/js";
-import pluginVue from "eslint-plugin-vue";
-import tseslint from "typescript-eslint";
-import vueParser from "vue-eslint-parser";
+import js from '@eslint/js';
 import eslintConfigPrettier from 'eslint-plugin-prettier/recommended';
+import pluginVue from 'eslint-plugin-vue';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import vueParser from 'vue-eslint-parser';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 export default [
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...pluginVue.configs["flat/essential"],
-  eslintConfigPrettier,
-  {
-    files: ["**/*.vue", "**/*.ts", "**/*.tsx"],
-    languageOptions: {
-      parser: vueParser,
-      parserOptions: {
-        parser: tseslint.parser,
-        ecmaVersion: 2020,
-        sourceType: "module",
-      },
-      globals: {
-        node: true,
-        es2020: true,
-      },
+    {
+        ignores: [
+            '.DS_Store',
+            'node_modules/',
+            'coverage/',
+            'dist/',
+            'dev-dist/',
+            'ios/',
+            'android/',
+            '.env.local',
+            '.env.*.local',
+            '**/*-debug.log*',
+            '.idea/',
+            '.vscode/',
+            '*.suo',
+            '*.ntvs*',
+            '*.njsproj',
+            '*.sln',
+            '*.sw?',
+        ],
     },
-    rules: {
-      "no-console": import.meta.env.NODE_ENV === "production" ? "warn" : "off",
-      "no-debugger": import.meta.env.NODE_ENV === "production" ? "warn" : "off",
-      "vue/no-deprecated-slot-attribute": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+    js.configs.recommended,
+    ...tseslint.configs.recommended,
+    ...pluginVue.configs['flat/essential'],
+    eslintConfigPrettier,
+    {
+        files: ['*.js', '*.mjs', '*.cjs', '*.config.{js,ts}'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
     },
-  },
+    {
+        files: ['**/*.vue', '**/*.ts', '**/*.tsx'],
+        languageOptions: {
+            parser: vueParser,
+            parserOptions: {
+                parser: tseslint.parser,
+                ecmaVersion: 2020,
+                sourceType: 'module',
+            },
+            globals: {
+                ...globals.browser,
+                ...globals.node,
+            },
+        },
+        rules: {
+            'no-console': isProduction ? 'warn' : 'off',
+            'no-debugger': isProduction ? 'warn' : 'off',
+            'vue/no-deprecated-slot-attribute': 'off',
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_',
+                    destructuredArrayIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
 ];

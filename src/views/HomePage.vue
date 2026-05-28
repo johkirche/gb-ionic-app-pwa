@@ -24,7 +24,8 @@
                 <header class="home-header">
                     <p class="home-header__date">{{ formattedDate }}</p>
                     <h1 class="home-header__greeting">
-                        {{ greeting }}<template v-if="displayName">,</template>
+                        {{ greeting }}
+                        <template v-if="displayName">,</template>
                         <template v-if="displayName">
                             <br />
                             <span class="home-header__name">{{ displayName }}</span>
@@ -49,9 +50,7 @@
                     >
                         <p class="featured-card__label">Lied der Woche</p>
                         <div class="featured-card__body">
-                            <span class="featured-card__number">{{
-                                songOfTheWeek.index
-                            }}</span>
+                            <span class="featured-card__number">{{ songOfTheWeek.index }}</span>
                             <span class="featured-card__title">{{ songOfTheWeek.titel }}</span>
                         </div>
                         <p class="featured-card__meta">{{ songOfTheWeekMeta }}</p>
@@ -296,7 +295,9 @@ function openSongOfTheWeek() {
     flex-direction: column;
     gap: var(--spacing-sm);
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
 .featured-card:active {

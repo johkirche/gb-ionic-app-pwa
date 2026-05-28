@@ -233,8 +233,6 @@ const isIOSView = computed(() =>
 const isAndroidView = computed(() =>
     previewDevice.value === 'auto' ? isAndroid.value : previewDevice.value === 'android',
 );
-const isDesktopView = computed(() => !isIOSView.value && !isAndroidView.value);
-
 const showInstallAction = computed(() => canInstall.value && !isIOSView.value);
 const installButtonLabel = computed(() =>
     isAndroidView.value ? 'Jetzt installieren' : 'App installieren',

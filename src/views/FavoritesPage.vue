@@ -15,8 +15,7 @@
                 <ion-icon :icon="heartOutline" size="large"></ion-icon>
                 <h2>Keine Favoriten</h2>
                 <p>
-                    Tippe auf das Herz-Symbol in einem Lied, um es zu deinen Favoriten
-                    hinzuzufügen.
+                    Tippe auf das Herz-Symbol in einem Lied, um es zu deinen Favoriten hinzuzufügen.
                 </p>
                 <ion-button fill="outline" @click="router.push('/songs')">
                     Lieder durchsuchen

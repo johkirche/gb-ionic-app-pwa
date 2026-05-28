@@ -115,9 +115,7 @@
                     >
                         <ion-label>
                             <h2>
-                                <span v-if="song.index" class="song-index">
-                                    {{ song.index }}.
-                                </span>
+                                <span v-if="song.index" class="song-index">{{ song.index }}.</span>
                                 <span class="song-title-text">{{ song.titel }}</span>
                                 <span v-if="hasAbcNotation(song)" class="song-tag abc-tag">
                                     ABC
@@ -125,9 +123,7 @@
                                 <span v-if="hasImageFile(song)" class="song-tag image-tag">
                                     Bild
                                 </span>
-                                <span v-if="song.notentextMxml" class="song-tag xml-tag">
-                                    XML
-                                </span>
+                                <span v-if="song.notentextMxml" class="song-tag xml-tag">XML</span>
                             </h2>
                             <p v-if="sortMode !== 'category' && formatCategories(song.kategorien)">
                                 {{ formatCategories(song.kategorien) }}
@@ -183,10 +179,7 @@ import {
     IonButton,
     IonCard,
     IonCardContent,
-    IonChip,
     IonContent,
-    IonFab,
-    IonFabButton,
     IonIcon,
     IonItem,
     IonLabel,
@@ -197,11 +190,8 @@ import {
 } from '@ionic/vue';
 import {
     checkmarkOutline,
-    codeSlashOutline,
-    downloadOutline,
     heart,
     heartOutline,
-    imageOutline,
     listOutline,
     musicalNotesOutline,
     searchOutline,
@@ -300,9 +290,7 @@ const sortActionButtons = computed(() => [
 
 // Song action sheet buttons
 const songActionButtons = computed(() => {
-    const isFav = selectedSongId.value
-        ? favoritesStore.isFavorite(selectedSongId.value)
-        : false;
+    const isFav = selectedSongId.value ? favoritesStore.isFavorite(selectedSongId.value) : false;
     return [
         {
             text: isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen',
@@ -351,7 +339,6 @@ async function scrollToSection(sectionKey: string) {
     const firstItem = document.querySelector(`[data-section="${sectionKey}"]`) as HTMLElement;
 
     if (firstItem) {
-        const scrollElement = await contentRef.value.$el.getScrollElement();
         const headerOffset = 80; // Account for toolbar
         const sectionHeaderOffset = showHeaders.value ? 40 : 0; // Account for sticky section header if shown
         const elementTop = firstItem.offsetTop - headerOffset - sectionHeaderOffset;
@@ -379,11 +366,6 @@ function onScroll(event: CustomEvent<ScrollDetail>) {
             break;
         }
     }
-}
-
-// Navigate to download page
-function navigateToDownload() {
-    router.push('/download');
 }
 
 // Navigate to song detail page

@@ -37,10 +37,7 @@
                 />
 
                 <!-- MusicXML (OSMD) Rendering -->
-                <div
-                    v-else-if="melodyDisplayMode === 'xml' && hasMelodyXml"
-                    class="melody-section"
-                >
+                <div v-else-if="melodyDisplayMode === 'xml' && hasMelodyXml" class="melody-section">
                     <OsmdRenderer
                         ref="osmdRendererRef"
                         :file-blob="melodyXmlBlob"
@@ -80,9 +77,7 @@
                 <SongVerses
                     :strophes="song.strophen"
                     :skip-first="
-                        melodyDisplayMode === 'xml' &&
-                        hasMelodyXml &&
-                        xmlSettings.showLyrics
+                        melodyDisplayMode === 'xml' && hasMelodyXml && xmlSettings.showLyrics
                     "
                 />
 
@@ -148,8 +143,7 @@ const songsStore = useSongsStore();
 const { songs, isLoading } = storeToRefs(songsStore);
 
 const preferencesStore = usePreferencesStore();
-const { notationScale, textSize, melodyDisplayMode, xmlSettings } =
-    storeToRefs(preferencesStore);
+const { notationScale, textSize, melodyDisplayMode, xmlSettings } = storeToRefs(preferencesStore);
 
 const { getFileUrl } = useStoredFiles();
 const melodyImageUrl = ref<string | null>(null);
@@ -199,15 +193,6 @@ const defaultMelodyAbc = computed(() => {
 // Check if song has melody
 const hasMelody = computed(() => {
     return defaultMelodyAbc.value.trim().length > 0;
-});
-
-// Get the default melody image file ID
-const defaultMelodyImageId = computed(() => {
-    const melodies = song.value?.melodieAbc;
-    if (!Array.isArray(melodies) || melodies.length === 0) return null;
-    // Find default melody or use first one
-    const defaultMelody = melodies.find((m) => m.is_default) || melodies[0];
-    return defaultMelody?.file_id || null;
 });
 
 // Check if song has melody image

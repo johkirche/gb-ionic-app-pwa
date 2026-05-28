@@ -20,7 +20,7 @@ export const longPressDirective: Directive = {
 
         el._longPressHandler = binding.value;
 
-        el._longPressStart = (e: TouchEvent | MouseEvent) => {
+        el._longPressStart = (_e: TouchEvent | MouseEvent) => {
             isLongPress = false;
 
             el._longPressTimeout = setTimeout(() => {

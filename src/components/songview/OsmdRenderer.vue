@@ -14,8 +14,8 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { IonIcon } from '@ionic/vue';
 import { alertCircleOutline } from 'ionicons/icons';
-import type PlaybackEngineType from 'osmd-audio-player';
 import type { OpenSheetMusicDisplay as OSMDType } from 'opensheetmusicdisplay';
+import type PlaybackEngineType from 'osmd-audio-player';
 
 import type { XmlDisplaySettings } from '@/db';
 

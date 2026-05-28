@@ -55,9 +55,7 @@ import {
     IonHeader,
     IonIcon,
     IonInput,
-    IonItem,
     IonModal,
-    IonTitle,
     IonToolbar,
 } from '@ionic/vue';
 import { checkmarkOutline, closeOutline } from 'ionicons/icons';

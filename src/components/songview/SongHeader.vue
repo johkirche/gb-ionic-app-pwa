@@ -48,7 +48,9 @@ const props = defineProps<{
 
 const favoritesStore = useFavoritesStore();
 
-const isFavorited = computed(() => (props.songId ? favoritesStore.isFavorite(props.songId) : false));
+const isFavorited = computed(() =>
+    props.songId ? favoritesStore.isFavorite(props.songId) : false,
+);
 
 function toggleFavorite() {
     if (!props.songId) return;

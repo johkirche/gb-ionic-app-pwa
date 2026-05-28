@@ -27,12 +27,7 @@
             </div>
         </Transition>
 
-        <ion-button
-            v-if="!isExpanded"
-            fill="clear"
-            class="search-toggle"
-            @click="expand"
-        >
+        <ion-button v-if="!isExpanded" fill="clear" class="search-toggle" @click="expand">
             <ion-icon slot="icon-only" :icon="searchOutline" />
         </ion-button>
     </div>

@@ -378,7 +378,7 @@ async function openEditNameModal() {
     await alert.present();
 }
 
-async function updateUserName(firstName: string, lastName: string) {
+async function updateUserName(_firstName: string, _lastName: string) {
     try {
         // TODO: Implement API call to update user name on server
         // For now, show a toast that the feature is coming
