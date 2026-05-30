@@ -12,7 +12,6 @@
                 :search-query="filters.searchQuery"
                 :selected-categories="filters.selectedCategories"
                 :has-notes="filters.hasNotes"
-                :has-melody="filters.hasMelody"
                 :has-melody-xml="filters.hasMelodyXml"
                 :filter-index-range="filters.indexRange"
                 :active-filter-count="activeFilterCount"
@@ -27,7 +26,6 @@
                 @open-sort="showSortOptions = true"
                 @toggle-category="toggleCategory"
                 @set-has-notes="setHasNotes"
-                @set-has-melody="setHasMelody"
                 @set-has-melody-xml="setHasMelodyXml"
                 @set-index-range="setIndexRange"
             />
@@ -46,7 +44,6 @@
                 :available-categories="availableCategories"
                 :selected-categories="filters.selectedCategories"
                 :has-notes="filters.hasNotes"
-                :has-melody="filters.hasMelody"
                 :has-melody-xml="filters.hasMelodyXml"
                 :filter-index-range="filters.indexRange"
                 :index-range="indexRange"
@@ -54,7 +51,6 @@
                 @close="showFilterDrawer = false"
                 @toggle-category="toggleCategory"
                 @set-has-notes="setHasNotes"
-                @set-has-melody="setHasMelody"
                 @set-has-melody-xml="setHasMelodyXml"
                 @set-index-range="setIndexRange"
                 @clear-all="clearFiltersKeepSearch"
@@ -227,7 +223,6 @@ const {
     clearSearch,
     toggleCategory,
     setHasNotes,
-    setHasMelody,
     setHasMelodyXml,
     setIndexRange,
     clearAllFilters,
